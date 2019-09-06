@@ -1,0 +1,17 @@
+{
+    "date": "yyyymmdd",
+    "time": "hhmmss",
+    "setup": "setup",
+    "rig": 1,
+    "temperature": 37.0,
+    "humidity": 25.0,
+    "comment": "was f\u00fcr ein nettes Experiment",
+    "food": "Agar",
+    "sex": "m",
+    "genotype": "wildtype",
+    "age": 0.2,
+    "camera": "piCamera",
+    "circRhytm":"6:22LD"
+    "video_length": 9000,
+    "FPS": 5
+}

@@ -1,5 +1,8 @@
 from class_gpio import Caroussel
-import csv
+import json
+import os
+import shutil
+
 
 class Experiment():
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
@@ -7,64 +10,60 @@ class Experiment():
     #TODO: dont declare unused variables --> Pipe directly into the save_data method
 	
     def __init__(self, infile):
-        items = read_out_infile 
+        indata = (json.load('template.json'))
         
         #Environmental Data
-        self.date = items[0]            #yyyymmdd
-        self.time = items[1]            #hhmmss --> 24h   
-        self.Setup = items[2]           #what is the setup?
-        self.Rig = items[3]             #int with 2 digits --> 01,02 etc.
-        self.Temperature = items[4]     #float
-        self.Humidity = items[5]        #float in [%]
-
-        self.CircRhythm = items[6]      #string selected from list 'rhythm'
+        self.date = indata['date']          #yyyymmdd
+        self.time = indata['time']          #hhmmss --> 24h   
+        self.setup = indata['setup']        #what is the setup?
+        self.rig = indata['rig']            #int with 2 digits --> 01,02 etc.
+        
+        #Metadata
+        self.temperature = indata['temperature']        #float
+        self.humidity = indata['humidity']              #float in [%]
+        self.comment = indata['comment']                #Free text
         
         #Drosophila data        
-        self.Water = items[10]
-        self.Food = items[11]           #string selected from list 'food'
-        self.Males = items[12]          #just "sex"? --> f, m default = m
-        self.Females = items[13]
-        self.Genotype_m = items[14]     #string from list Genotype
-        self.Genotype_f = items[15]
-        self.Modification_m = items[16]
-        self.Modification_f = items[17]
-        self.Age_m_days = items[18]     #float: 0.2,0.6,1,
-        self.Age_f_days = items[19]
-        self.Age_f_hours = items[20]
-        self.Age_f_hours = items[21]
-        self.WaterStarvation_m_hours = items[22]
-        self.WaterStarvation_f_hours = items[23]
-        self.FoodStarvation_m_hours = items[24]
-        self.FoodStarvation_f_hours = items[25]
-        
-        #comment
-        self.comment = items[26]    
-    
-        #GPIO and Caroussel-Data     
-        caroussel_data = items[26:] #Here the regime to set up the caroussel
-        self.caroussel = Caroussel(*caroussel_data)
+        self.food = indata['food']                  #string selected from list 'food'
+        self.sex  = indata['sex']                   #f, m default = m
+        self.genotype = indata['genotype']          #string from list Genotype
+        self.age = indata['age']                    #float: 0.2,0.6,1,
+
+        #GPIO and Caroussel-Data
+        caroussel_data = (indata['circRythm'])     #Here the regime to set up the caroussel
+        self.caroussel = Caroussel(caroussel_data)
         
         
     def start(self):
-        """Run experiment --> start the GPIO and so on.."""
-        #make Folder with the name of the Experiment 
-        #change to this directory
-        #make a 'Folderfile' --> Like a README with the necessary information?
+        """Run experiment --> start the Caroussel and record the experiment in an 
+        never ending loop"""
         
-        self.caroussel.start_motor()
+        #TODO: Maybe define a save-directory? 
+        
+        os.mkdir(f'CARO_{self.date}_experiment_testfolder/') #make Folder with the name of the Experiment 
+        shutil.copy('template.json',f'CARO_{self.date}_experiment_testfolder/experiment_settings.json') #Copy the experiment-settings into the folder
+        os.chdir(f'CARO_{self.date}_experiment_testfolder/') #change to this directory
+        
+        self.caroussel.start_motor()    #They have to run all the time
+        
+        while True:
+            self.caroussel.check_light()    #check before every recording-session   
+            
         
         #Now record for 30 minutes... --> look at cronjobs if the time is right
         #red light from 6-22 and white light from 22-6.. start of recording eighter at 30 or 00 min
-        if time_is_right:
-            try:
-                self.caroussel.start_recording()
-            except:
-                self.caroussel.motor_stop()
-                self.caroussel.camera.stop_preview()
-            finally:
-                self.caroussel.GPIO.cleanup()
-                #change dir back to scrip directory
-                self.caroussel.camera_close()
+        
+        
+            if time_is_right:
+                try:
+                    self.caroussel.start_recording()
+                except:
+                    self.caroussel.stop_motor()
+                    self.caroussel.camera.stop_preview()
+                finally:
+                        self.caroussel.GPIO.cleanup()
+                            #change dir back to scrip directory
+                        self.caroussel.camera_close()
         
     
     def save_experiment(self):

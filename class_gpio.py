@@ -1,35 +1,33 @@
 from picamera import PiCamera
 import RPi.GPIO as GPIO
+import json
 
 class Caroussel():
-    """Here is saved everything related to the Raspberry and the mechanical data. Also the methods for running the camera, the motor etc."""
+    """Here is saved everything related to the Raspberry and the mechanical data. Also the methods for running the camera, the motor etc.
+    get settings for the strings from other json files (e.g. what means the circRhythm)"""
     def __init__(self, items):
+        self.settings = (json.load('settings.json'))
         #TODO: define here the default values --> to initialize the Caroussel-settings via the Experiment (with *data) ~ setting
         
         #metadata
         self.id
         self.device
         
-        #light: off on initialisation
-        self.IR = False                     #off
-        self.IR_Intensity = 0.00            #in [%]
-        self.White_OnOff = False
-        self.White_Intensity = 0.00
+        self.CircRhythm = items[6]      #string selected from list 'rhythm'
         
         #Motor --> How both motors work
-        self.Motor1_On = False           #Bool: 1,0
+        self.motor_started = False
         self.Motor_Intensity = 0            #the speed of the motor
         self.Motor1_direction = items[1]    #str: cw; ccw //clockwise and counterclockwise
         
-        self.Motor2_On = False
         self.Motor2_Intensity = 0           
         self.Motor2_direction = items[2]    #str: same, different
         self.Switch_time = 5                #int: default=5
             #Umschalt-Zeit zwischen Kupplungen (min); nur ein Motor drehen, aber immer beide an 
             
         #Disk position --> tiefergelegtes Karussell oder ebenerdig
-        self.DiskPosition1 = 0              #float: 0; -1.3 [mm] default=0                   
-        self.DiskPosition2 = 0              #float: 0; -1.3 [mm] default=0                   
+        self.DiskPosition1 = 0              #float: 0; -1.5 default=0                   
+        self.DiskPosition2 = 0              #float: 0; -1.5 default=0                   
         
         #sound
         self.Sound = items[3]
@@ -81,15 +79,24 @@ class Caroussel():
         
         GPIO.setup(3, GPIO.OUT) ## Setup Magnet1 
         GPIO.setup(4, GPIO.OUT) ## Setup Magnet2 
+        
 
-
-        #red   = GPIO.PWM(15, 100) #set the PWM on port X at 100 Hertz
-        #motor = GPIO.PWM(18, 100)
-        #white = GPIO.PWM(13, 100)
+    
+    def set_light(self,circRythm):
+        light = self.settings[circRythm]
+        #check according to the rhythm
+        self.IR = False                     #off
+        self.IR_Intensity = 0.00            #in [%]
+        self.White_OnOff = False
+        self.White_Intensity = 0.00
+        #switch the light if time is right --> always check 
+        #before the the new recording session
+        
+        #red  = GPIO.PWM(22, 100) #set the PWM on port X at 100 Hertz
+        #white = GPIO.PWM(27, 100)
         #red.start(100)         # redLED starts off
         #white.start(100)         # whiteLED start on
-
-
+        
     def switch_light(self,color):
         if(color == 'red'):
             self.IR_OnOff = bool(-1*int(self.IR_OnOff))
@@ -102,10 +109,22 @@ class Caroussel():
         else:
             self.Motor2_OnOff = bool(-1*int(self.Motor2_OnOff))
     
-    def start_motor(self, motorspeed):
+    
+    def start_motor(self):
+        #motor1 = GPIO.PWM(18, 100)
+        #motor2 = GPIO.PWM(22, 100)
+        #motor1.start(100)
+        #motor2.start(100)
         None
-        #Todo: Implement
-        #motorspeed == motorintensity
+    
+    def stop_motor(self):
+        None
+        
+    def check_motor(self):
+        if(self.motor_started == False):
+            self.start_motor()
+            self.motor_started = True    
+    
     def start_recording(self,pause_time):#--> what does pause_time mean?? #oscillation rate in sec (length per video)
         #just copy-pastefrom old script --> check the docs
         while True: #--> break with KeyboardInterrupt... not quite the best style
