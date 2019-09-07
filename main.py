@@ -1,6 +1,5 @@
 from class_experiment import Experiment
 from class_GUI import GUI
-
 import argparse
 
 def main():
@@ -22,8 +21,8 @@ def main():
     
     #2. CREATE THE EXPERIMENT CLASS
     experiment = Experiment(infile)
+    experiment.cron()    #set the light using parallelisation? --> Multiprocessing
     experiment.save()   # --> load the experiment-settings into the archive
-    #set the light using parallelisation? --> Multiprocessing
     experiment.start()
 
 def get_arguments():

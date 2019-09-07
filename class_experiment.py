@@ -6,11 +6,10 @@ import shutil
 
 class Experiment():
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
-    start-method for the experiment and creates the archive. The necessary data should come from an input_file (for now-csv)"""
-    #TODO: dont declare unused variables --> Pipe directly into the save_data method
+    start-method for the experiment and creates the archive. The necessary data comes from an input_file"""
 	
     def __init__(self, infile):
-        indata = (json.load('template.json'))
+        indata = (json.load(infile))
         
         #Environmental Data
         self.date = indata['date']          #yyyymmdd
@@ -32,7 +31,16 @@ class Experiment():
         #GPIO and Caroussel-Data
         caroussel_data = (indata['circRythm'])     #Here the regime to set up the caroussel
         self.caroussel = Caroussel(caroussel_data)
+    
+    def cron(self):
+        """start a new python CRON-job over this method or make parallel methods... I have to decide later"""
         
+        self.caroussel.start_motor()    #They have to run all the time
+        while True:
+            self.caroussel.check_light()    #check before every recording-session or cronjob
+            #TODO:start the light
+            #start the Motor and change the motor every {switchtime} minutes
+        None
         
     def start(self):
         """Run experiment --> start the Caroussel and record the experiment in an 
@@ -44,13 +52,12 @@ class Experiment():
         shutil.copy('template.json',f'CARO_{self.date}_experiment_testfolder/experiment_settings.json') #Copy the experiment-settings into the folder
         os.chdir(f'CARO_{self.date}_experiment_testfolder/') #change to this directory
         
-        self.caroussel.start_motor()    #They have to run all the time
         
+        self.caroussel.camera.start_preview(alpha=250, fullscreen=False, window=(10, 400, 494, 784))
+                
         while True:
-            self.caroussel.check_light()    #check before every recording-session   
             
-        
-        #Now record for 30 minutes... --> look at cronjobs if the time is right
+        #Now record for 9000 frames  --> look at cronjobs if the time is right
         #red light from 6-22 and white light from 22-6.. start of recording eighter at 30 or 00 min
         
         

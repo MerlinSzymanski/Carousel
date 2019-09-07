@@ -1,54 +1,50 @@
 from picamera import PiCamera
+from io import BytesIO
 import RPi.GPIO as GPIO
 import json
-
+    
 class Caroussel():
     """Here is saved everything related to the Raspberry and the mechanical data. Also the methods for running the camera, the motor etc.
     get settings for the strings from other json files (e.g. what means the circRhythm)"""
-    def __init__(self, items):
-        self.settings = (json.load('settings.json'))
+    
+    def __init__(self, infile):
+        indata = (json.load(infile))
         #TODO: define here the default values --> to initialize the Caroussel-settings via the Experiment (with *data) ~ setting
         
-        #metadata
-        self.id
-        self.device
+        #metadata --> Maybe from the device itself?
+        self.id = 1
+        self.device = '1'
         
-        self.CircRhythm = items[6]      #string selected from list 'rhythm'
+        self.CircRhythm = indata["circRhytm"]     #string selected from list 'rhythm'
         
-        #Motor --> How both motors work
+        #Motors
         self.motor_started = False
-        self.Motor_Intensity = 0            #the speed of the motor
-        self.Motor1_direction = items[1]    #str: cw; ccw //clockwise and counterclockwise
+        self.Motor1_direction = indata["motor_direction"]    #str: cw; ccw //clockwise and counterclockwise
+        self.Motor2_direction = indata["motor2_direction"]   #str: same, different
+        self.Switch_time = indata["motor_switchtime"]        #int: default=5  #Umschalt-Zeit zwischen Kupplungen (min); nur ein Motor drehen, aber immer beide an 
+        #TODO: Move this also to the cronJob
         
-        self.Motor2_Intensity = 0           
-        self.Motor2_direction = items[2]    #str: same, different
-        self.Switch_time = 5                #int: default=5
-            #Umschalt-Zeit zwischen Kupplungen (min); nur ein Motor drehen, aber immer beide an 
-            
         #Disk position --> tiefergelegtes Karussell oder ebenerdig
-        self.DiskPosition1 = 0              #float: 0; -1.5 default=0                   
-        self.DiskPosition2 = 0              #float: 0; -1.5 default=0                   
-        
-        #sound
-        self.Sound = items[3]
+        self.DiskPosition1 = indata["disc1_pos"]      #float: 0; -1.5 default=0                   
+        self.DiskPosition2 = indata["disc2_pos"]      #float: 0; -1.5 default=0                   
         
         #camera
-        #--> CameraModel (Constant) PiCameraIR
-        #TODO: move this to a method
-        self.camera = PiCamera()
-        x,y = (1296, 972)
-        self.camera.resolution = (x, y)
-        px = 768
-        xb = (x/2.0 - px/2) / x
-        yb = (y/2.0 - px/2) / y
-        self.camera.zoom = (xb,yb,px/float(x),px/float(y))
-        self.camera.framerate = 5    #FPS --> int: default=5
-        self.camera.hflip = True
-        self.camera.vflip = True
-        self.camera.exposure_mode = 'auto'
-        self.camera.start_preview(alpha=250, fullscreen=False, window=(10, 400, 494, 784))
+        self.camera_model = "PiCameraIR"
+        self.camera = self.set_camera()
+        self.camera.framerate = indata['FPS']         #FPS --> int: default=5
+        self.Videolength = indata['video_lenghts']     #default = 9000 (frames)
+    
         
-        self.Videolength = items[7]     #default = 9000 (frames)
+        def set_camera(self):
+            #Maybe move these settings to a file?
+            camera = PiCamera()
+            camera.resolution = (1296, 972)
+            camera.zoom = (0.2,0.1,0.59,0.79)   #Wo kommen die Zahlen her?
+            camera.hflip = True
+            camera.vflip = True
+            camera.exposure_mode = 'auto'
+            return camera
+        
         
         '''New GPIO:
             3 = magnet1
