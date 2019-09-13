@@ -1,5 +1,6 @@
 from class_experiment import Experiment
 from class_GUI import GUI
+from threading import Thread
 import argparse
 
 def main():
@@ -17,12 +18,15 @@ def main():
     else:
         infile = open(args.infile)
         #Default is to provide an input-file and to provide all the data for the new experiment
-        #TODO: Decide what kind of input-file and create a template
     
     #2. CREATE THE EXPERIMENT CLASS
     experiment = Experiment(infile)
-    experiment.cron()    #set the light using parallelisation? --> Multiprocessing
-    experiment.save()   # --> load the experiment-settings into the archive
+        #2.1 start the cron_job --> light and motor
+    cron_job = Thread(target=experiment.cron)
+    cron_job.start()    
+        #2.2 save the experiment_data into THE archive
+    experiment.save()   
+        #2.3 start the actual experiment
     experiment.start()
 
 def get_arguments():
@@ -31,7 +35,7 @@ def get_arguments():
     
     choice = parser.add_mutually_exclusive_group()  #To not have gui and infile at the same time
     choice.add_argument("-g", "--gui", help='Use this tag to open the GUI in the next step', action="store_true")
-    choice.add_argument("-i", "--infile",type = str, default = "./template.json", help = 'The experiment-file to run the experiment without GUI. See the template for more information' )
+    choice.add_argument("-i", "--infile",type = str, default = "./files/template.json", help = 'The experiment-file to run the experiment without GUI. See the template for more information' )
 
     return parser.parse_args()
 

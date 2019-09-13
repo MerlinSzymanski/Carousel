@@ -29,13 +29,15 @@ class Experiment():
         self.age = indata['age']                    #float: 0.2,0.6,1,
 
         #GPIO and Caroussel-Data
-        caroussel_data = (indata['circRythm'])     #Here the regime to set up the caroussel
-        self.caroussel = Caroussel(caroussel_data)
+        #its all in the file - so use the same file again        
+        self.caroussel = Caroussel(infile)
     
     def cron(self):
-        """start a new python CRON-job over this method or make parallel methods... I have to decide later"""
-        
-        self.caroussel.start_motor()    #They have to run all the time
+        """starts a python CRON-job, started in the Main before the experiment even begins"""
+        #1. Start both of the motors
+        self.caroussel.start_motor()
+        #2.regulate the light according to the CircRhythm
+        # --> load json with the circRhythm settings and use the time to "count" when to start
         while True:
             self.caroussel.check_light()    #check before every recording-session or cronjob
             #TODO:start the light
