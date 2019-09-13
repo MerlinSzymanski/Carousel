@@ -25,9 +25,12 @@ def main():
     cron_job = Thread(target=experiment.cron)
     cron_job.start()    
         #2.2 save the experiment_data into THE archive
-    experiment.save()   
+        #get ID for the archive and the logging
+    experiment_ID = experiment.temp_save_experiment()   
         #2.3 start the actual experiment
-    experiment.start()
+    experiment.start(experiment_ID)
+        #2.4 archive the experiment
+    experiment.archive_experiment(experiment_ID)
 
 def get_arguments():
     '''This method implements argparse to get the user-decision about the input'''
@@ -36,7 +39,7 @@ def get_arguments():
     choice = parser.add_mutually_exclusive_group()  #To not have gui and infile at the same time
     choice.add_argument("-g", "--gui", help='Use this tag to open the GUI in the next step', action="store_true")
     choice.add_argument("-i", "--infile",type = str, default = "./files/template.json", help = 'The experiment-file to run the experiment without GUI. See the template for more information' )
-
+    
     return parser.parse_args()
 
 def get_data_from_gui():

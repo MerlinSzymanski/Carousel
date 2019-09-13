@@ -1,20 +1,20 @@
 [
     {
         "6:22LD":{
-            "red": "yyyymmdd",
-            "white": "hhmmss",
+            "red": "22",
+            "white": "6",
             }
     }
     #Include other settings here and the related Metadata?
     
     {        
-         "6:22LD":{
+         "8:16LD":{
             "red": "yyyymmdd",
             "white": "hhmmss",
             }
     }
     {
-         "6:22LD":{
+         "12:12LD":{
             "red": "yyyymmdd",
             "white": "hhmmss",
             }

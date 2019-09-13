@@ -1,8 +1,7 @@
 {
     "date": "yyyymmdd",
     "time": "hhmmss",
-    "setup": "setup",
-    "rig": 1,
+    "rig": "01",
     "temperature": 37.0,
     "humidity": 25.0,
     "comment": "was f\u00fcr ein nettes Experiment",
@@ -13,7 +12,7 @@
     "camera": "piCamera",
     "circRhytm":"6:22LD",
     "motor_switchtime": 5,
-    "motor_direction":"cw",
+    "motor1_direction":"cw",
     "motor2_direction":"same",
     "disc1_pos":0,
     "disc2_pos":0,
