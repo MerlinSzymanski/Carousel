@@ -1,6 +1,6 @@
 from class_gpio import Caroussel
 import csv
-import datetime
+from datetime import datetime
 import json
 import os
 import shutil
@@ -19,32 +19,39 @@ class Experiment():
             self.indata = (json.load(json_file))
             
         #some processing
+        #TODO: see, if time_string really is necessary... Maybe get the time completely from the raspberry
         date_string = self.indata['date'] +' '+ self.indata['time']  #yyyymmdd hhmmss
         self.timestamp = datetime.strptime(date_string,'%Y%m%d %H%M%S')
+        
         #the GPIO - instance
         self.caroussel = Caroussel(self.indata)
   
     #1. Start the CronJob
     def cron(self):
         """starts a python CRON-job in the Main before the experiment even begins Motor and light are therefor independend
-        of the beginning if the experiment"""
-        #1.1 Start the motors
+        of the beginning of the experiment"""
+        #1.1 Start the motors 
+        
         self.caroussel.start_motor()
         
         #1.2.regulate the light according to the CircRhythm
         with open('files/settings.json','r') as set_file:
             settings = (json.load(set_file))
             circ = settings[self.indata['circRythm']]
-            time_white = int(circ['white']) #z.B. '6'
-            time_red = int(circ['red']) #z.B. '22'
+            start_time_white = int(circ['white'])   #z.B. '6'
+            start_time_red = int(circ['red'])       #z.B. '22'
         
             while True:
+                #Get the current hours
+                current_hour = int(datetime.strftime(datetime.now(),"%H"))
                 #Check if time is between 6 and 22 --> make white light, else red
-                if (time_white <= self.timestamp.hour and self.timestamp.hour < time_red):
+                if (start_time_white <= current_hour and current_hour < start_time_red):
                     self.caroussel.set_daylight()
                 else:
                     self.caroussel.set_nightlight()
                     sleep(1)
+
+
 
     #2. create temp-file
     def temp_save_experiment(self):

@@ -23,6 +23,10 @@ class Caroussel():
         self.camera.framerate = indata['FPS']         #FPS --> int: default=5
         self.videolength = indata['video_lenghts']     #default = 9000 (frames)
     
+        #Light
+        self.redlight = False
+        self.whitelight = False
+        
         #TODO: GPIO: maybe shift outside the class? Test with the real Raspian
         # Use board pin numbering
         GPIO.setmode(GPIO.BOARD)
@@ -38,6 +42,9 @@ class Caroussel():
         GPIO.setup(23, GPIO.OUT)    ## Setup Motor2 Direction  
         GPIO.setup(3, GPIO.OUT)     ## Setup Magnet1 
         GPIO.setup(4, GPIO.OUT)     ## Setup Magnet2 
+        """I dont know yet what is responsible for what... Magnet just for discPosition? 
+        i thought there is a way of starting the motors without movements? But i think I have to test it directly
+        on the Raspberry"""
      
         
     def set_camera(self):
@@ -51,18 +58,26 @@ class Caroussel():
     
     def start_motor(self):
     #part of the cronjob started in main -> experiment.cron()
-        GPIO.output([24,25],True)  #starts channels 24,25 (motors)    
+        GPIO.output([24,25],True)   #starts channels 24,25 (motors)
+        GPIO.output([3,4],True)     #starts the magnets (caroussels dont move) 
 
     def set_nightlight(self):
     #part of the cronjob started in main -> experiment.cron()
-        GPIO.output(27,GPIO.LOW)    #white off
-        GPIO.output(22,GPIO.HIGH)   #red on
+        if(self.redlight == False):
+            GPIO.output(27,GPIO.LOW)    #white off
+            GPIO.output(22,GPIO.HIGH)   #red on
+            self.whitelight = False
+            self.redlight = True
 
     def set_daylight(self):
-        GPIO.output(27,GPIO.HIGH)   #white on
-        GPIO.output(22,GPIO.LOW)    #red off
+    #part of the cronjob started in main -> experiment.cron()
+        if(self.whitelight == False):
+            GPIO.output(27,GPIO.HIGH)   #white on
+            GPIO.output(22,GPIO.LOW)    #red off
+            self.redlight = False
+            self.whitelight = True
 
-        
+
 ####NOT FULLY IMPLEMENTED BELOW####
 
 
