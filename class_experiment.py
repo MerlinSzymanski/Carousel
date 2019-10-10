@@ -10,8 +10,8 @@ from threading import Thread
 
 class Experiment():
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
-    start-method for the experiment and creates the archive. The necessary data comes from an input_file. Pure informational data is not
-    implemented (e.g. rig-number or genotype) but later saved directly into the archive"""
+    start-method for the experiment and creates the archive. The necessary data comes from an input_file. Pure informational
+    data is not implemented (e.g. rig-number or genotype) but later saved directly into the archive"""
 	
     def __init__(self, infile):
         #All the data used only for the archive
@@ -31,7 +31,7 @@ class Experiment():
         """starts a python CRON-job in the Main before the experiment even begins Motor and light are therefor independend
         of the beginning of the experiment"""
         #1.1 Start the motors 
-        
+
         self.caroussel.start_motor()
         
         #1.2.regulate the light according to the CircRhythm
@@ -55,7 +55,7 @@ class Experiment():
 
     #2. create temp-file
     def temp_save_experiment(self):
-        """create temporary json file which contains the current settings"""
+        """create temporary json file which contains the current settings + experiment ID and status"""
         #2.1. create experiment-ID used for the folders etc.
         experiment_ID = f'{self.timestamp.strftime("%y%m%d%H%M")}_CARO_{self.indata["rig"]}_{self.indata["sex"]}\
         _{self.indata["genotype"]}_{self.indata["age"]}'
@@ -73,14 +73,41 @@ class Experiment():
     ###NOT YET DONE###
     #TODO: This whole method... inclding the logging
     def start_motor_and_disc(self):
-        #TODO: get the direction, the switch and the disc-position --> start the
-        #GPIO as assigned
-    
+        #lets start with the disc
+        self.caroussel.set_disc_position(1,self.indata['disc1_pos'])
+        self.caroussel.set_disc_position(2,self.indata['disc2_pos'])
+        
+        #Now the motor_direction. it starts with motor1 and changes to motor2
+        #after the switch-time. and so on and so forth.
+        direction1 = self.indata['motor1_direction']
+        direction2 = True if self.indata['motor2_direction'] == 'same' else False
+        same_func = None
+        diff_func = None
+        
+        while True:
+            if(direction1 == 'cw'):
+                self.caroussel.turn_motor_cw(1) #Turns Motor1 clockwise
+                same_func = self.caroussel.turn_motor_cw()
+                diff_func = self.caroussel.turn_motor_ccw()    
+            else:
+                self.caroussel.turn_motor_ccw(1) #Turns Motor2 counterclockwise
+                same_func = self.caroussel.turn_motor_ccw()
+                diff_func = self.caroussel.turn_motor_cw() 
+           
+            #And now the switch
+            switch = self.indata['motor_switchtime']
+            sleep(switch)   #so the motor might run for the time
+            if(direction2):
+                same_func(2)
+            else:
+                diff_func(2)
+            
+            
     def start_camera(self, outdir):
+        
         #TODO: get the framerate and videolenght
         #save the videofiles to the oudir
         self.caroussel.start_recording()
-        
         
         
     def start(self, experiment_ID):
@@ -97,9 +124,8 @@ class Experiment():
 
         
         #Define the Threads
-        
-        motor_and_disc = Thread(target=start_motor_and_disc)
-        camera = Thread(target=start_camera, args = [outdir])
+        motor_and_disc = Thread(target=self.start_motor_and_disc)
+        camera = Thread(target=self.start_camera, args = [outdir])
         
         #TODO check the Time
         
@@ -109,25 +135,25 @@ class Experiment():
                 motor_and_disc.start()
                 camera.start()
                 
-                except:
-                    self.caroussel.stop_motor()
-                    self.caroussel.camera.stop_preview()
-                finally:
-                        self.caroussel.GPIO.cleanup()
+            except:
+                self.caroussel.stop_motor()
+                self.caroussel.camera.stop_preview()
+            finally:
+                self.caroussel.GPIO.cleanup()
                             #change dir back to scrip directory
-                        self.caroussel.camera_close()
+                self.caroussel.camera_close()
 
 
-        #4. Archive the experiment
-        def archive_experiment(self, experiment_ID):
-            """open THE archive-file and save the Experiment data (the logging)"""
+    #4. Archive the experiment
+    def archive_experiment(self, experiment_ID):
+        """open THE archive-file and save the Experiment data (the logging)"""
         
-            archive = open(f'save_files/ExperimentArchive.csv', 'a')
-            with open(f'save_files/temp/temp_{experiment_ID}_log.json','r') as json_file:
-                logging = (json.load(json_file))
-                writer = csv.writer(archive)
+        archive = open(f'save_files/ExperimentArchive.csv', 'a')
+        with open(f'save_files/temp/temp_{experiment_ID}_log.json','r') as json_file:
+            logging = (json.load(json_file))
+            writer = csv.writer(archive)
         
-                archive_data = [experiment_ID, 
+            archive_data = [experiment_ID, 
                                 logging['date'], 
                                 logging['time'],
                                 logging['rig'],
@@ -148,7 +174,7 @@ class Experiment():
                                 logging['comment'],
                                 logging['status']]
                 
-                writer.writerows(archive_data)
-                archive.close()
-                #TODO: delete temp-file
+            writer.writerows(archive_data)
+            archive.close()
+            #TODO: delete temp-file
     

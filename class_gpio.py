@@ -7,20 +7,10 @@ class Caroussel():
     The schedule is saved in the experiment-class"""
     
     def __init__(self, indata):  
-        
-        #Motors
-        self.motor1_direction = indata["motor1_direction"]    #str: cw; ccw //clockwise and counterclockwise
-        self.motor2_direction = indata["motor2_direction"]   #str: same, different
-        self.switch_time = indata["motor_switchtime"]        #int: default=5  #Umschalt-Zeit zwischen Kupplungen (min); nur ein Motor drehen, aber immer beide an 
-        
-        #Disk position --> tiefergelegtes Karussell oder ebenerdig
-        self.diskPosition1 = indata["disc1_pos"]      #float: 0; -1.5 default=0                   
-        self.diskPosition2 = indata["disc2_pos"]      #float: 0; -1.5 default=0                   
-        
         #camera
+        self.indata = indata
         self.camera_model = "PiCameraIR"
         self.camera = self.set_camera()
-        self.camera.framerate = indata['FPS']         #FPS --> int: default=5
         self.videolength = indata['video_lenghts']     #default = 9000 (frames)
     
         #Light
@@ -28,6 +18,7 @@ class Caroussel():
         self.whitelight = False
         
         #TODO: GPIO: maybe shift outside the class? Test with the real Raspian
+
         # Use board pin numbering
         GPIO.setmode(GPIO.BOARD)
         #You need to set up every channel you are using as an input or an output.
@@ -35,7 +26,6 @@ class Caroussel():
         
         GPIO.setup(22, GPIO.OUT)    ## Setup redLED
         GPIO.setup(27, GPIO.OUT)    ## Setup whiteLED
-        GPIO.setup(17, GPIO.OUT)    ## Setup blueLED
         GPIO.setup(24, GPIO.OUT)    ## Setup Motor1 Speed
         GPIO.setup(25, GPIO.OUT)    ## Setup Motor2 Speed
         GPIO.setup(18, GPIO.OUT)    ## Setup Motor1 Direction
@@ -54,6 +44,7 @@ class Caroussel():
         camera.hflip = True
         camera.vflip = True
         camera.exposure_mode = 'auto'
+        camera.framerate = self.indata['FPS']
         return camera
     
     def start_motor(self):
@@ -79,9 +70,16 @@ class Caroussel():
 
 
 ####NOT FULLY IMPLEMENTED BELOW####
+    def turn_motor_cw(self,motor): #which motor to turn, True = cw, False = ccw
+        #Turn Motor clockwise
+        #Checkm that other Motor stands still
+        
+    def turn_motor_ccw(self,motor):
+        #Turn motor ccw
+        #check, that other motor stands still
 
-
-
+    def set_disc_position(self,number,position):
+        #TODO: set the disc-number to the corresponding position
 
     
     def start_recording(self,pause_time):#--> what does pause_time mean?? #oscillation rate in sec (length per video)
