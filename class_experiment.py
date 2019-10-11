@@ -52,7 +52,6 @@ class Experiment():
                     sleep(1)
 
 
-
     #2. create temp-file
     def temp_save_experiment(self):
         """create temporary json file which contains the current settings + experiment ID and status"""
@@ -79,29 +78,36 @@ class Experiment():
         
         #Now the motor_direction. it starts with motor1 and changes to motor2
         #after the switch-time. and so on and so forth.
+        
         direction1 = self.indata['motor1_direction']
         direction2 = True if self.indata['motor2_direction'] == 'same' else False
         same_func = None
         diff_func = None
         
+            #defining the relative functions
+        if(direction1 == 'cw'):
+            self.caroussel.turn_motor_cw(1) #Turns Motor1 clockwise
+            same_func = self.caroussel.turn_motor_cw()
+            diff_func = self.caroussel.turn_motor_ccw()    
+        else:
+            self.caroussel.turn_motor_ccw(1) #Turns Motor2 counterclockwise
+            same_func = self.caroussel.turn_motor_ccw()
+            diff_func = self.caroussel.turn_motor_cw()
+        
+        #And now the switch
+        switch = in(self.indata['motor_switchtime'])
+        
         while True:
-            if(direction1 == 'cw'):
-                self.caroussel.turn_motor_cw(1) #Turns Motor1 clockwise
-                same_func = self.caroussel.turn_motor_cw()
-                diff_func = self.caroussel.turn_motor_ccw()    
-            else:
-                self.caroussel.turn_motor_ccw(1) #Turns Motor2 counterclockwise
-                same_func = self.caroussel.turn_motor_ccw()
-                diff_func = self.caroussel.turn_motor_cw() 
-           
-            #And now the switch
-            switch = self.indata['motor_switchtime']
-            sleep(switch)   #so the motor might run for the time
+            sleep(switch)
             if(direction2):
                 same_func(2)
             else:
                 diff_func(2)
-            
+            sleep(switch)
+            if(direction2):
+                same_func(1)
+            else:
+                diff_func(1)
             
     def start_camera(self, outdir):
         
@@ -109,39 +115,49 @@ class Experiment():
         #save the videofiles to the oudir
         self.caroussel.start_recording()
         
-        
+
+    
     def start(self, experiment_ID):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
-        
-        outdir = f'save_files/experiments/{experiment_ID}/'
-        
-        #TODO: Create directory-Tree to save the data into
-        
-        os.mkdir(f'CARO_{self.date}_experiment_testfolder/') #make Folder with the name of the Experiment 
-        shutil.copy('template.json',f'CARO_{self.date}_experiment_testfolder/experiment_settings.json') #Copy the experiment-settings into the folder
-        os.chdir(f'CARO_{self.date}_experiment_testfolder/') #change to this directory
+       
+        #Make the folder-structure
+        try:
+            os.mkdir('save_files/experiment/')
+            os.chdir('save_files/experiment/')
+        except:
+            os.chdir('save_files/experiment/')
+            
+        #make Folder with the name of the Experiment 
+        os.mkdir(f'CARO_{self.date}_{experiment_ID}/')
+        #Copy the experiment-settings into the folder
+        shutil.copy('../temp/template.json',f'CARO_{self.date}_{experiment_ID}/experiment_settings.json') 
+        #change to this directory
+        os.chdir(f'CARO_{self.date}_{experiment_ID}/') 
 
-        
         #Define the Threads
         motor_and_disc = Thread(target=self.start_motor_and_disc)
-        camera = Thread(target=self.start_camera, args = [outdir])
         
-        #TODO check the Time
-        
-        #TODO: make this mess right
-        if time_is_right:
+        #wait, until time is eighter at minute 30 or 00
+        while (int(datetime.srftime(datetime.now()),"%M") not in (30,0)):
+            sleep(1)
+            
+        while(True):
             try:
                 motor_and_disc.start()
-                camera.start()
+                
+                
                 
             except:
+                #TODO: make def end_experiment()
                 self.caroussel.stop_motor()
                 self.caroussel.camera.stop_preview()
             finally:
                 self.caroussel.GPIO.cleanup()
                             #change dir back to scrip directory
                 self.caroussel.camera_close()
+    
+    
 
 
     #4. Archive the experiment

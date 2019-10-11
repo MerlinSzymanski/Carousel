@@ -35,7 +35,9 @@ class Caroussel():
         """I dont know yet what is responsible for what... Magnet just for discPosition? 
         i thought there is a way of starting the motors without movements? But i think I have to test it directly
         on the Raspberry"""
-     
+        #discposition
+        self.disc1pos = 0
+        self.disc2pos = 0
         
     def set_camera(self):
         camera = PiCamera()
@@ -68,7 +70,23 @@ class Caroussel():
             self.redlight = False
             self.whitelight = True
 
-
+    def set_disc_position(self,number,position):
+        #Set the disc-number to the corresponding position
+        if(number == 1):
+            if(position < 0 and self.disc1pos == 0):
+                GPIO.output(3, GPIO.HIGH)   #Magnet on - lower disc?
+                self.disc1pos = -1
+            elif(position == 0 and self.disc1pos < 0):
+                GPIO.output(3, GPIO.LOW)   #Magnet off - higher disc?
+                self.disc1pos = 0
+        if(number == 2):
+            if(position < 0 and self.disc2pos == 0):
+                GPIO.output(4, GPIO.HIGH)   #Magnet on - lower disc?
+                self.disc1pos = -1
+            elif(position == 0 and self.disc2pos < 0):
+                GPIO.output(4, GPIO.LOW)   #Magnet off - higher disc?
+                self.disc1pos = 0                
+        
 ####NOT FULLY IMPLEMENTED BELOW####
     def turn_motor_cw(self,motor): #which motor to turn, True = cw, False = ccw
         #Turn Motor clockwise
@@ -78,8 +96,7 @@ class Caroussel():
         #Turn motor ccw
         #check, that other motor stands still
 
-    def set_disc_position(self,number,position):
-        #TODO: set the disc-number to the corresponding position
+    
 
     
     def start_recording(self,pause_time):#--> what does pause_time mean?? #oscillation rate in sec (length per video)
