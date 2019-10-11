@@ -1,7 +1,7 @@
 from picamera import PiCamera
-from io import BytesIO
 import RPi.GPIO as GPIO
-    
+
+  
 class Caroussel():
     """Here is saved every method related to the Raspberry and the GPIO. Therefor the methods for running the camera, the motor etc.
     The schedule is saved in the experiment-class"""
@@ -38,6 +38,9 @@ class Caroussel():
         #discposition
         self.disc1pos = 0
         self.disc2pos = 0
+        #motor
+        self.motor1dir = True #True = cw, False = ccw
+        
         
     def set_camera(self):
         camera = PiCamera()
@@ -87,31 +90,30 @@ class Caroussel():
                 GPIO.output(4, GPIO.LOW)   #Magnet off - higher disc?
                 self.disc1pos = 0                
         
-####NOT FULLY IMPLEMENTED BELOW####
-    def turn_motor_cw(self,motor): #which motor to turn, True = cw, False = ccw
-        #Turn Motor clockwise
-        #Checkm that other Motor stands still
+    def stop_turning_motor2(self):
+        #TODO: How to stop turning, without stopping the motor?
+        GPIO.output(23, GPIO.LOW)   #Motor2 out?  
         
-    def turn_motor_ccw(self,motor):
-        #Turn motor ccw
-        #check, that other motor stands still
-
-    
-
-    
-    def start_recording(self,pause_time):#--> what does pause_time mean?? #oscillation rate in sec (length per video)
-        #just copy-pastefrom old script --> check the docs
-        while True: #--> break with KeyboardInterrupt... not quite the best style
-            stream = io.BytesIO()
-            current_date = (time.strftime("%y%m%d"))
-            current_time = (time.strftime("%H%M%S"))
-            automatic_name = "".join((setupname,"_",rigname,"_",current_date,"_",current_time,"_",exp_name,"_L_", "{0:03d}".format(val), ".h264"))            
-            camera.start_recording(stream, format='h264', resize = (px,px))
-            camera.wait_recording(pause_time)
-            camera.stop_recording()
-        
-            with open (automatic_name,'w') as f:
-                stream.seek (0)
-                shutil.copyfileobj (stream,f)
-                stream.close()
-            time.sleep(0.05)
+    def stop_turning_motor1(self):
+        GPIO.output(18, GPIO.LOW)   #Motor1 out?               
+                
+                
+    def turn_motor1(self,direction1):
+        self.stop_turning_motor2()
+        if(direction1 == 'cw'):
+            GPIO.output(18, GPIO.HIGH)  #Motor1 clockwise?
+            self.motor1dir = True
+        elif(direction1 == 'ccw'):
+            GPIO.output(18, GPIO.LOW)   #Motor1 counterclockwise?
+            self.motor1dir = False
+               
+    def turn_motor2(self,direction2):
+        self.stop_turning_motor1()
+        if(direction2 == 'same' and self.motor1dir):
+            GPIO.output(23, GPIO.HIGH)  #Motor2 clockwise?
+        elif(direction2 == 'same' and not self.motor1dir):
+            GPIO.output(23, GPIO.LOW)  #Motor2 counterclockwise?
+        elif(direction2 == 'different' and self.motor1dir):
+            GPIO.output(23, GPIO.LOW)  #Motor2 counterclockwise?        
+        elif(direction2 == 'different' and not self.motor1dir):
+            GPIO.output(23, GPIO.HIGH)  #Motor2 clockwise?        

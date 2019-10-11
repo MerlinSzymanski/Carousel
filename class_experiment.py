@@ -5,6 +5,8 @@ import json
 import os
 import shutil
 from time import sleep
+from datetime import datetime
+from io import BytesIO
 from threading import Thread
 
 
@@ -14,10 +16,12 @@ class Experiment():
     data is not implemented (e.g. rig-number or genotype) but later saved directly into the archive"""
 	
     def __init__(self, infile):
+        
         #All the data used only for the archive
         with open(infile,'r') as json_file:
             self.indata = (json.load(json_file))
-            
+            with open('save_files/temp/exp_template.json','w') as temp:
+                json.dump(temp, self.indata, indent=2) #create temp-file for the experiment-folder  
         #some processing
         #TODO: see, if time_string really is necessary... Maybe get the time completely from the raspberry
         date_string = self.indata['date'] +' '+ self.indata['time']  #yyyymmdd hhmmss
@@ -53,24 +57,15 @@ class Experiment():
 
 
     #2. create temp-file
-    def temp_save_experiment(self):
-        """create temporary json file which contains the current settings + experiment ID and status"""
-        #2.1. create experiment-ID used for the folders etc.
-        experiment_ID = f'{self.timestamp.strftime("%y%m%d%H%M")}_CARO_{self.indata["rig"]}_{self.indata["sex"]}\
+    def get_experiment_id(self):
+        """create unique experiment-ID which contains the current settings"""
+        #2.1. create experiment-ID 
+        experiment_ID = f'CARO_{self.timestamp.strftime("%y%m%d%H%M")}_{self.indata["rig"]}_{self.indata["sex"]}\
         _{self.indata["genotype"]}_{self.indata["age"]}'
-        
         #2.2. add the new information to the dic
         self.indata['id'] = experiment_ID
         self.indata['status'] = "initiated"
-        
-        #2.3. save the information in a temp-json
-        with open(f'save_files/temp/temp_{experiment_ID}_log.json','w') as temp:   
-            json.dumps(self.indata, temp, indent = 2)
-        
-        return experiment_ID
     
-    ###NOT YET DONE###
-    #TODO: This whole method... inclding the logging
     def start_motor_and_disc(self):
         #lets start with the disc
         self.caroussel.set_disc_position(1,self.indata['disc1_pos'])
@@ -80,48 +75,43 @@ class Experiment():
         #after the switch-time. and so on and so forth.
         
         direction1 = self.indata['motor1_direction']
-        direction2 = True if self.indata['motor2_direction'] == 'same' else False
-        same_func = None
-        diff_func = None
-        
-            #defining the relative functions
-        if(direction1 == 'cw'):
-            self.caroussel.turn_motor_cw(1) #Turns Motor1 clockwise
-            same_func = self.caroussel.turn_motor_cw()
-            diff_func = self.caroussel.turn_motor_ccw()    
-        else:
-            self.caroussel.turn_motor_ccw(1) #Turns Motor2 counterclockwise
-            same_func = self.caroussel.turn_motor_ccw()
-            diff_func = self.caroussel.turn_motor_cw()
-        
-        #And now the switch
-        switch = in(self.indata['motor_switchtime'])
+        direction2 = self.indata['motor2_direction'] 
+        switch_time = int(self.indata['switch'])
         
         while True:
-            sleep(switch)
-            if(direction2):
-                same_func(2)
-            else:
-                diff_func(2)
-            sleep(switch)
-            if(direction2):
-                same_func(1)
-            else:
-                diff_func(1)
+            self.caroussel.turn_motor1(direction1)
+            sleep(switch_time)  #let the motor1 turn
+            self.caroussel.turn_motor2(direction2)
+            sleep(switch_time)  #let the motor2 turn 
             
-    def start_camera(self, outdir):
+    ###NOT YET DONE###
+    def start_camera(self):
+        #TODO: get the framerate and videolenght - save the videofiles to the oudir
         
-        #TODO: get the framerate and videolenght
-        #save the videofiles to the oudir
-        self.caroussel.start_recording()
+        self.caroussel.camera.start_preview()
         
+        while True: #--> break with KeyboardInterrupt... not quite the best style
+            stream = BytesIO()
+            datetime_string = (datetime.strftime(datetime.now(),"%y%m%d_%H%M%S"))
+            automatic_name = f'{setupname}_{rigname}_{datetime_string}_{exp_name}_L_{0:03d}".format(val), ".h264"))            
+            camera.start_recording(stream, format='h264', resize = (px,px))
+            camera.wait_recording(pause_time)
+            camera.stop_recording()
+        
+            with open (automatic_name,'w') as f:
+                stream.seek (0)
+                shutil.copyfileobj (stream,f)
+                stream.close()
+            time.sleep(0.05)
+
 
     
-    def start(self, experiment_ID):
+    def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
        
         #Make the folder-structure
+        home = os.getcwd()
         try:
             os.mkdir('save_files/experiment/')
             os.chdir('save_files/experiment/')
@@ -129,39 +119,45 @@ class Experiment():
             os.chdir('save_files/experiment/')
             
         #make Folder with the name of the Experiment 
-        os.mkdir(f'CARO_{self.date}_{experiment_ID}/')
+        os.mkdir(f'{self.indata["id"]}/')
+        os.chdir(f'{self.indata["id"]}/') 
+        
         #Copy the experiment-settings into the folder
-        shutil.copy('../temp/template.json',f'CARO_{self.date}_{experiment_ID}/experiment_settings.json') 
-        #change to this directory
-        os.chdir(f'CARO_{self.date}_{experiment_ID}/') 
-
+        shutil.copy('../../temp/exp_template.json','experiment_settings.json') 
+        
+        
         #Define the Threads
         motor_and_disc = Thread(target=self.start_motor_and_disc)
+        camera = Thread(target=self.start_camera)
         
         #wait, until time is eighter at minute 30 or 00
-        while (int(datetime.srftime(datetime.now()),"%M") not in (30,0)):
-            sleep(1)
+        while (int(datetime.srftime(datetime.now()),"%M") not in [30,0]):
+            sleep(1)   
+        
+        #While loop makes here no sense I guess?
+        try:
+            motor_and_disc.start()
+            camera.start()
+            #Now wait for keyboardInterrupt
+            while True:
+                time.sleep(1)
+        except:
+            #TODO: make def end_experiment()
+            self.caroussel.stop_motor()
+            self.caroussel.camera.stop_preview()
+            self.caroussel.camera_close()
+            #TODO: Lights out
+            #TODO: Magnets out
             
-        while(True):
-            try:
-                motor_and_disc.start()
-                
-                
-                
-            except:
-                #TODO: make def end_experiment()
-                self.caroussel.stop_motor()
-                self.caroussel.camera.stop_preview()
-            finally:
-                self.caroussel.GPIO.cleanup()
-                            #change dir back to scrip directory
-                self.caroussel.camera_close()
-    
-    
+        finally:
+            self.caroussel.GPIO.cleanup()
+            os.chdir(home) # Go back to original script-directory
+            #TODO: Delete temp-files
+            #TODO: archive the experiment
 
 
     #4. Archive the experiment
-    def archive_experiment(self, experiment_ID):
+    def archive_experiment(self):
         """open THE archive-file and save the Experiment data (the logging)"""
         
         archive = open(f'save_files/ExperimentArchive.csv', 'a')

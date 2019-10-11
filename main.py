@@ -26,11 +26,11 @@ def main():
     cron_job.start()    
         #2.2 save the experiment_data into THE archive
         #get ID for the archive and the logging
-    experiment_ID = experiment.temp_save_experiment()   
+    experiment.get_experiment_id() 
         #2.3 start the actual experiment
-    experiment.start(experiment_ID)
+    experiment.start()
         #2.4 archive the experiment
-    experiment.archive_experiment(experiment_ID)
+    experiment.archive_experiment()
 
 def get_arguments():
     '''This method implements argparse to get the user-decision about the input'''
