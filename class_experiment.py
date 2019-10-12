@@ -92,18 +92,20 @@ class Experiment():
         
         while True: #--> break with KeyboardInterrupt... not quite the best style
             stream = BytesIO()
-            datetime_string = (datetime.strftime(datetime.now(),"%y%m%d_%H%M%S"))
-            automatic_name = f'{setupname}_{rigname}_{datetime_string}_{exp_name}_L_{0:03d}".format(val), ".h264"))            
-            camera.start_recording(stream, format='h264', resize = (px,px))
-            camera.wait_recording(pause_time)
-            camera.stop_recording()
+            n = 0
+            automatic_name = f'{self.indata["id"]}_L_{n}.h264'
+            #TODO: get the px,px --> Resize to what            
+            self.caroussel.camera.start_recording(stream, format='h264', resize = (px,px))
+            self.caroussel.camera.wait_recording(int(self.indata["pause_time"]))
+            self.caroussel.camera.stop_recording()
         
             with open (automatic_name,'w') as f:
                 stream.seek (0)
                 shutil.copyfileobj (stream,f)
                 stream.close()
-            time.sleep(0.05)
-
+            sleep(0.05)
+            
+            n += 1
 
     
     def start(self):
