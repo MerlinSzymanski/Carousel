@@ -8,29 +8,30 @@ def main():
     or to open a GUI and type the data in manually"""
     
     #1. DECIDE WHICH INPUT-FORMAT TO CHOOSE
+    #get data from argparse
     args = get_arguments()
-    
     if(args.gui):
         infile = get_data_from_gui()
-        #GUI chosen
-        #TODO: load the settings of the previous experiment
-        
     else:
-        infile = open(args.infile)
-        #Default is to provide an input-file and to provide all the data for the new experiment
+        infile = open(args.infile) #Default = input-file 
     
     #2. CREATE THE EXPERIMENT CLASS
     experiment = Experiment(infile)
         #2.1 start the cron_job --> light and motor
     cron_job = Thread(target=experiment.cron)
     cron_job.start()    
-        #2.2 save the experiment_data into THE archive
-        #get ID for the archive and the logging
+        #2.2 get ID for the archive and the logging
     experiment.get_experiment_id() 
         #2.3 start the actual experiment
     experiment.start()
         #2.4 archive the experiment
     experiment.archive_experiment()
+    
+        #2.5 terminate the cron-job
+    cron_job.running = False
+    cron_job.join()
+    experiment.shutdown()
+    
 
 def get_arguments():
     '''This method implements argparse to get the user-decision about the input'''

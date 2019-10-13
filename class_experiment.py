@@ -5,12 +5,12 @@ import json
 import os
 import shutil
 from time import sleep
-from datetime import datetime
 from io import BytesIO
+import threading
 from threading import Thread
 
 
-class Experiment():
+class Experiment(Thread):
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
     start-method for the experiment and creates the archive. The necessary data comes from an input_file. Pure informational
     data is not implemented (e.g. rig-number or genotype) but later saved directly into the archive"""
@@ -34,6 +34,8 @@ class Experiment():
     def cron(self):
         """starts a python CRON-job in the Main before the experiment even begins Motor and light are therefor independend
         of the beginning of the experiment"""
+        t = threading.currentThread()   #used to quit the cron-job later
+        
         #1.1 Start the motors 
 
         self.caroussel.start_motor()
@@ -45,7 +47,7 @@ class Experiment():
             start_time_white = int(circ['white'])   #z.B. '6'
             start_time_red = int(circ['red'])       #z.B. '22'
         
-            while True:
+            while getattr(t,"running",True):
                 #Get the current hours
                 current_hour = int(datetime.strftime(datetime.now(),"%H"))
                 #Check if time is between 6 and 22 --> make white light, else red
@@ -67,6 +69,7 @@ class Experiment():
         self.indata['status'] = "initiated"
     
     def start_motor_and_disc(self):
+        t = threading.currentThread() 
         #lets start with the disc
         self.caroussel.set_disc_position(1,self.indata['disc1_pos'])
         self.caroussel.set_disc_position(2,self.indata['disc2_pos'])
@@ -78,7 +81,7 @@ class Experiment():
         direction2 = self.indata['motor2_direction'] 
         switch_time = int(self.indata['switch'])
         
-        while True:
+        while getattr(t,'running',True):
             self.caroussel.turn_motor1(direction1)
             sleep(switch_time)  #let the motor1 turn
             self.caroussel.turn_motor2(direction2)
@@ -86,27 +89,30 @@ class Experiment():
             
     ###NOT YET DONE###
     def start_camera(self):
-        #TODO: get the framerate and videolenght - save the videofiles to the oudir
+        t = threading.currentThread() 
         
         self.caroussel.camera.start_preview()
+        n = 1
         
-        while True: #--> break with KeyboardInterrupt... not quite the best style
+        while getattr(t,'running',True): 
+            #create stream
             stream = BytesIO()
-            n = 0
-            automatic_name = f'{self.indata["id"]}_L_{n}.h264'
-            #TODO: get the px,px --> Resize to what            
-            self.caroussel.camera.start_recording(stream, format='h264', resize = (px,px))
+            video_name = f'{self.indata["id"]}_L_{0:03}.h264'.format(n)   
+            #start recording to the stream
+            self.caroussel.camera.start_recording(stream, format='h264', resize = (768,768))
+            #Now the duration of the recording
+            #Change that to Frames, not seconds!
             self.caroussel.camera.wait_recording(int(self.indata["pause_time"]))
             self.caroussel.camera.stop_recording()
         
-            with open (automatic_name,'w') as f:
+            with open (video_name,'wb') as f:
+                # "Rewind" the stream to the beginning so we can flush its content to the file
                 stream.seek (0)
                 shutil.copyfileobj (stream,f)
                 stream.close()
             sleep(0.05)
             
             n += 1
-
     
     def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
@@ -136,27 +142,24 @@ class Experiment():
         while (int(datetime.srftime(datetime.now()),"%M") not in [30,0]):
             sleep(1)   
         
-        #While loop makes here no sense I guess?
+        motor_and_disc.start()
+        camera.start()
+        
+        print("Please keyboard-interrupt the programm")
         try:
-            motor_and_disc.start()
-            camera.start()
             #Now wait for keyboardInterrupt
             while True:
-                time.sleep(1)
+                sleep(1)
         except:
-            #TODO: make def end_experiment()
-            self.caroussel.stop_motor()
-            self.caroussel.camera.stop_preview()
-            self.caroussel.camera_close()
-            #TODO: Lights out
-            #TODO: Magnets out
+            motor_and_disc.running = False
+            camera.running = False
+            print("Ending the current filming-cycle. Please wait for the camera to end")
+            
+            motor_and_disc.join()
+            camera.running.join()
             
         finally:
-            self.caroussel.GPIO.cleanup()
             os.chdir(home) # Go back to original script-directory
-            #TODO: Delete temp-files
-            #TODO: archive the experiment
-
 
     #4. Archive the experiment
     def archive_experiment(self):
@@ -191,4 +194,12 @@ class Experiment():
             writer.writerows(archive_data)
             archive.close()
             #TODO: delete temp-file
+            
+    def shutdown(self):
+        #TODO: Stop everything, crons ended etc.
+        self.caroussel.stop_motor()
+        self.caroussel.camera.stop_preview()
+        self.caroussel.camera_close()
+        self.caroussel.shut_light()
+        self.caroussel.GPIO.cleanup()
     

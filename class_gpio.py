@@ -9,7 +9,6 @@ class Caroussel():
     def __init__(self, indata):  
         #camera
         self.indata = indata
-        self.camera_model = "PiCameraIR"
         self.camera = self.set_camera()
         self.videolength = indata['video_lenghts']     #default = 9000 (frames)
     
@@ -43,13 +42,18 @@ class Caroussel():
         
         
     def set_camera(self):
+        #Data comes from the old script
         camera = PiCamera()
-        camera.resolution = (1296, 972)
-        camera.zoom = (0.2,0.1,0.59,0.79)   #Wo kommen die Zahlen her?
+        x,y = (1296, 972)
+        camera.resolution = (x, y)
+        px = 768
+        xb = (x/2.0 - px/2) / x
+        yb = (y/2.0 - px/2) / y
+        camera.zoom = (xb,yb,px/float(x),px/float(y))
         camera.hflip = True
         camera.vflip = True
         camera.exposure_mode = 'auto'
-        camera.framerate = self.indata['FPS']
+        camera.framerate = float(self.indata['FPS'])
         return camera
     
     def start_motor(self):
@@ -73,6 +77,12 @@ class Caroussel():
             self.redlight = False
             self.whitelight = True
 
+    def shut_light(self):
+        if(self.whitelight == True):
+            GPIO.output(27,GPIO.LOW)    #white off
+        if(self.redlight == True):
+            GPIO.output(22,GPIO.LOW)
+        
     def set_disc_position(self,number,position):
         #Set the disc-number to the corresponding position
         if(number == 1):
