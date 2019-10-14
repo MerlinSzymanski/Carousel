@@ -1,4 +1,4 @@
-from class_gpio import Caroussel
+from caroussel import Caroussel
 import csv
 from datetime import datetime
 import json
