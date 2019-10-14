@@ -8,16 +8,13 @@ class Caroussel():
     
     def __init__(self, indata):  
         #camera
-        self.indata = indata
         self.camera = self.set_camera()
-        self.videolength = indata['video_lenghts']     #default = 9000 (frames)
     
         #Light
         self.redlight = False
         self.whitelight = False
         
-        #TODO: GPIO: maybe shift outside the class? Test with the real Raspian
-
+        #TODO: GPIO outside the class?
         # Use board pin numbering
         GPIO.setmode(GPIO.BOARD)
         #You need to set up every channel you are using as an input or an output.
@@ -53,10 +50,10 @@ class Caroussel():
         camera.hflip = True
         camera.vflip = True
         camera.exposure_mode = 'auto'
-        camera.framerate = float(self.indata['FPS'])
         return camera
     
     def start_motor(self):
+    #TODO: start the motor without turning the discs?
     #part of the cronjob started in main -> experiment.cron()
         GPIO.output([24,25],True)   #starts channels 24,25 (motors)
         GPIO.output([3,4],True)     #starts the magnets (caroussels dont move) 
