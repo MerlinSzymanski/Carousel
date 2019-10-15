@@ -2,6 +2,7 @@ from experiment import Experiment
 from GUI import GUI
 from threading import Thread
 import argparse
+import time
 
 def main():
     """This Main method is used to decide, if one wants to provide an input-file with all the necessary experiment-data
@@ -13,7 +14,7 @@ def main():
     if(args.gui):
         infile = get_data_from_gui()
     else:
-        infile = open(args.infile) #Default = input-file 
+        infile = args.infile #Default = input-file 
     
     #2. CREATE THE EXPERIMENT CLASS
     experiment = Experiment(infile)
@@ -29,7 +30,12 @@ def main():
         #2.5 terminate the cron-job
     cron_job.running = False
     cron_job.join()
+    
     experiment.shutdown()
+    print()
+    print()
+    print("Experiment over")
+    time.sleep(5)
     
 
 def get_arguments():

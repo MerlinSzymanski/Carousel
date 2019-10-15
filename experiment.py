@@ -26,7 +26,7 @@ class Experiment():
         self.indata['id'] = f'CARO_{self.indata["date"]}{self.indata["time"]}_{self.indata["rig"]}_{self.indata["sex"]}_{self.indata["genotype"]}_{self.indata["age"]}'
 
         with open('save_files/temp/exp_settings.json','w') as temp:
-            json.dump(temp, self.indata, indent=2) #create temp-file for the later experiment-folder
+            json.dump(self.indata, temp, indent=2) #create temp-file for the later experiment-folder
                
         self.indata['status'] = "Experiment set up, but not started"
             
@@ -44,9 +44,12 @@ class Experiment():
         self.caroussel.start_motor()
         
         #1.2.regulate the light according to the CircRhythm
-        with open('files/circrythm.json','r') as circ_file:
+        with open('../../files/circrythm.json','r') as circ_file:
             settings = (json.load(circ_file))
-            circ = settings[self.indata['circRythm']]
+            for setting in settings:
+                if(self.indata['circRythm'] in setting):
+                    circ = setting[self.indata['circRythm']]
+                    
             start_time_white = int(circ['white'])   #z.B. '6'
             start_time_red = int(circ['red'])       #z.B. '22'
         
@@ -66,7 +69,7 @@ class Experiment():
                     timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_red}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
                     
                     #print barplot to position 1 showing time until light change
-                    pibar = tqdm(range(timedelta.seconds),position = 1, ascii = True, desc = "Current Light: White")
+                    pibar = tqdm(range(timedelta.seconds),position = 2, ascii = True, desc = "Current Light: Daylight(White)")
                     for i in pibar:   
                         time.sleep(1)
                         if(t.running == False):
@@ -74,16 +77,17 @@ class Experiment():
                 else:
                     #calculate the remaining seconds:
                     self.caroussel.set_nightlight()
-                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_white}:00:00','%y%m%d,%H:%M:S') - datetime.now()
+                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_white}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
                     
                     #print a nice barplot to stdout while waiting for light-change
-                    pibar = tqdm(range(timedelta.seconds), position = 1, ascii = True, desc = "Current Light: Red")
+                    pibar = tqdm(range(timedelta.seconds), position = 1, ascii = True, desc = "Current Light: Nightlight(Red)")
                     for i in pibar:
                         time.sleep(1)
                         if(t.running == False):
                             break
 
-        print('Terminating the Cron-Job for the light')
+        tqdm.write('Thread: Light - Terminated')
+        return 1
         
     def start_motor_and_disc(self):
         t = threading.current_thread()
@@ -98,7 +102,7 @@ class Experiment():
         
         direction1 = self.indata['motor1_direction']
         direction2 = self.indata['motor2_direction'] 
-        switch_time = int(self.indata['switch'])*60 #we need the time in seconds
+        switch_time = int(self.indata['motor_switchtime'])*60 #we need the time in seconds
         
         while True: #Since this thread runs shorter than the camera, it cant end after this loop
             #To really end the thread -->wait for the camera to finish and break this thread
@@ -121,8 +125,9 @@ class Experiment():
                 if(t.breaking): #to end the thread
                     break
         
-        print('Thread: Motordirection and Discs - Terminated')
-
+        tqdm.write('Thread: Motordirection and Discs - Terminated')
+        return 1 #Necessary for the joining of the threads
+        
     ###NOT YET DONE###
     def start_camera(self):
         #Thread-related stuff ... to remote-stop the process
@@ -132,7 +137,7 @@ class Experiment():
         #Get the Data from the Infile
         self.caroussel.camera.framerate = float(self.indata['FPS'])
         self.caroussel.camera.start_preview()
-        pause_time = int(self.indata["video_length"])/int(self.indata["FPS"])   #still only FPS :/
+        pause_time = int(int(self.indata["video_length"])/int(self.indata["FPS"]))   #still only FPS :/
         n = 1
         
         while getattr(t,"running",True): #run_again for the soft experiment ending
@@ -164,7 +169,8 @@ class Experiment():
             time.sleep(0.05)
             n += 1
     
-        print('Thread "Camera" terminated')
+        tqdm.write('Thread: Camera - terminated')
+        return 1 #Necessary for the joining of the threads
         
     def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
@@ -172,6 +178,7 @@ class Experiment():
        
         #Make the folder-structure
         home = os.getcwd()
+        time.sleep(2) #to not conflict with the cronjob at the start
         try:
             os.mkdir('save_files/experiment/')
             os.chdir('save_files/experiment/')
@@ -192,14 +199,14 @@ class Experiment():
         #Get timedelta to next Experiment-start (eighter 30:00 or 00:00)
         
         if(int(time.strftime("%M")) < 30):
-            time_to_wait = datetime.strptime(f'{time.strftime("%y%m%d, %H")}:30:00','%y%m%d,%H:%M:S') - datetime.now()
+            time_to_wait = datetime.strptime(f'{time.strftime("%y%m%d, %H")}:30:00','%y%m%d, %H:%M:%S') - datetime.now()
         else:
             #one-liner for the better readability... just get the timedate object for one hour in the future... 
             one_hour_later = datetime.strptime(f'{time.strftime("%y%m%d, %H:%M:%S").replace(time.strftime("%H"),str((int(time.strftime("%H"))+1)%24))}',"%y%m%d, %H:%M:%S")
             time_to_wait = datetime.strptime(f'{one_hour_later.strftime("%y%m%d, %H")}:00:00','%y%m%d, %H:%M:%S') - datetime.now()
         
         #wait, until time is eighter at minute 30 or 00 --> show as progress bar
-        bar = tqdm(range(time_to_wait.seconds),position=2, ascii = True, desc="Time until Experiment starts")
+        bar = tqdm(range(time_to_wait.seconds),position=1, ascii = True, desc="Time until Experiment starts")
         for i in bar:
             time.sleep(1)
 
@@ -211,7 +218,7 @@ class Experiment():
         camera.start()
         
         time.sleep(5) #wait for the progress-bars to start
-        print("Experiment runs: Please press Ctr-c to end the Experiment")
+        tqdm.write("Experiment runs: Please press Ctr-c to end the Experiment")
         try:
             #Now wait for first (soft) keyboardInterrupt
             while True:
@@ -221,18 +228,17 @@ class Experiment():
             camera.running = False
             #Wait for second (hard) Keyboard interrupt
             try:
-                print("The Experiment ends after the current camera-cycle is done")
-                print("Press Ctr-c for instant stop of experiment")
-                bar = tqdm(range(30), ascii = True, desc = "Press Ctr-c now")
+                tqdm.write("The Experiment ends after the current camera-cycle is done. Press Ctr-c for instant stop of experiment")
+                bar = tqdm(range(30),position = 1, ascii = True, desc = "Press Ctr-c now")
                 for i in bar:
                     time.sleep(1)
-                    
             except:
                camera.breaking = True
 
             #wait for the threads to join()
             camera.running.join()
             motor_and_disc.breaking = True
+            
             motor_and_disc.join()
             
         finally:
@@ -253,7 +259,7 @@ class Experiment():
                         self.indata['rig'],
                         self.indata['temperature'],
                         self.indata['humidity'],
-                        self.indata['circRhytm'],
+                        self.indata['circRythm'],
                         self.indata['video_length'],
                         self.indata['FPS'],
                         self.indata['food'],
@@ -268,7 +274,7 @@ class Experiment():
                         self.indata['comment'],
                         self.indata['status']]
                 
-        writer.writerows(archive_data)
+        writer.writerow(archive_data)
         archive.close()
 
     def shutdown(self):
