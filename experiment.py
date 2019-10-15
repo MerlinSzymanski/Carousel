@@ -58,28 +58,26 @@ class Experiment():
                 #Get the current hour
                 current_hour = int(time.strftime("%H"))
                 #Check if time is between 6 and 22 --> make white light, else red
+                
                 if (start_time_white <= current_hour and current_hour < start_time_red):
 
                     #calculate the remaining seconds:
                     self.caroussel.set_daylight()
                     timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_red}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
                     
-                    #print a nice barplot to stdout while waiting for light-change
-                    pibar = tqdm(range(timedelta.seconds))
-                    pibar.set_description("Cronjob - current Light: DAYLIGHT")
+                    #print barplot to position 1 showing time until light change
+                    pibar = tqdm(range(timedelta.seconds),position = 1, ascii = True, desc = "Current Light: White")
                     for i in pibar:   
                         time.sleep(1)
                         if(t.running == False):
                             break
-                
                 else:
                     #calculate the remaining seconds:
                     self.caroussel.set_nightlight()
                     timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_white}:00:00','%y%m%d,%H:%M:S') - datetime.now()
                     
                     #print a nice barplot to stdout while waiting for light-change
-                    pibar = tqdm(range(timedelta.seconds))
-                    pibar.set_description("Cronjob - current Light: NIGHTLIGHT")
+                    pibar = tqdm(range(timedelta.seconds), position = 1, ascii = True, desc = "Current Light: Red")
                     for i in pibar:
                         time.sleep(1)
                         if(t.running == False):
@@ -87,10 +85,10 @@ class Experiment():
 
         print('Terminating the Cron-Job for the light')
         
-        
     def start_motor_and_disc(self):
-        
         t = threading.current_thread()
+        t.breaking = False
+        
         #lets start with the disc
         self.caroussel.set_disc_position(1,self.indata['disc1_pos'])
         self.caroussel.set_disc_position(2,self.indata['disc2_pos'])
@@ -100,36 +98,63 @@ class Experiment():
         
         direction1 = self.indata['motor1_direction']
         direction2 = self.indata['motor2_direction'] 
-        switch_time = int(self.indata['switch'])
+        switch_time = int(self.indata['switch'])*60 #we need the time in seconds
         
-        while getattr(t,'running',True):
-            self.caroussel.turn_motor1(direction1)
-            time.sleep(switch_time)  #let the motor1 turn
-            self.caroussel.turn_motor2(direction2)
-            time.sleep(switch_time)  #let the motor2 turn 
+        while True: #Since this thread runs shorter than the camera, it cant end after this loop
+            #To really end the thread -->wait for the camera to finish and break this thread
+            if(t.breaking):
+                break
             
+            #fancy progress bar, showing the spin-direction 
+            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = f"Motor 1, Spindirection: {direction1}") 
+            self.caroussel.turn_motor1(direction1) #let the motor1 turn
+            for i in bar:   
+                time.sleep(1) 
+                if(t.breaking): #to end the thread
+                    break
+                
+            #Overwrite bar at position 2
+            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = f"Motor 2, Spindirection: {direction2}")
+            self.caroussel.turn_motor2(direction2) #let the motor2 turn 
+            for i in bar:
+                time.sleep(1)  
+                if(t.breaking): #to end the thread
+                    break
+        
+        print('Thread: Motordirection and Discs - Terminated')
+
     ###NOT YET DONE###
     def start_camera(self):
+        #Thread-related stuff ... to remote-stop the process
         t = threading.current_thread() 
+        t.breaking = False #for the hard experiment ending
         
+        #Get the Data from the Infile
         self.caroussel.camera.framerate = float(self.indata['FPS'])
         self.caroussel.camera.start_preview()
-        
-        pause_time = int(self.indata["video_length"])/int(self.indata["FPS"])
-        
+        pause_time = int(self.indata["video_length"])/int(self.indata["FPS"])   #still only FPS :/
         n = 1
         
-        while getattr(t,'running',True): 
-            #create stream
+        while getattr(t,"running",True): #run_again for the soft experiment ending
+            #Check, if Thread is still supposed to run
+            if(t.breaking == True):
+                break
+            
+            #Yes: create stream
             stream = BytesIO()
             video_name = f'{self.indata["id"]}_L_{0:03}.h264'.format(n)   
             #start recording to the stream
             self.caroussel.camera.start_recording(stream, format='h264', resize = (768,768))
-            #Now the duration of the recording
             #TODO: Change that to Frames, not seconds! --> not possible with piCamera
-            self.caroussel.camera.wait_recording(pause_time)
+            
+            #Set up progress-bar for the Camera-videos
+            bar = tqdm(range(pause_time), position = 4, ascii = True, desc="Camera, taking video Nr. {0:03}".format(n))
+            for i in bar:
+                self.caroussel.camera.wait_recording(1)
+                if(t.breaking == True): #Check every second, if thread should be running
+                    break
+            
             self.caroussel.camera.stop_recording()
-        
             with open (video_name,'wb') as f:
                 # "Rewind" the stream to the beginning so we can flush its content to the file
                 stream.seek (0)
@@ -139,6 +164,8 @@ class Experiment():
             time.sleep(0.05)
             n += 1
     
+        print('Thread "Camera" terminated')
+        
     def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
@@ -162,10 +189,20 @@ class Experiment():
         motor_and_disc = Thread(target=self.start_motor_and_disc)
         camera = Thread(target=self.start_camera)
         
-        #wait, until time is eighter at minute 30 or 00
-        while (int(time.strftime("%M")) not in [30,0]):
-            time.sleep(1)
+        #Get timedelta to next Experiment-start (eighter 30:00 or 00:00)
         
+        if(int(time.strftime("%M")) < 30):
+            time_to_wait = datetime.strptime(f'{time.strftime("%y%m%d, %H")}:30:00','%y%m%d,%H:%M:S') - datetime.now()
+        else:
+            #one-liner for the better readability... just get the timedate object for one hour in the future... 
+            one_hour_later = datetime.strptime(f'{time.strftime("%y%m%d, %H:%M:%S").replace(time.strftime("%H"),str((int(time.strftime("%H"))+1)%24))}',"%y%m%d, %H:%M:%S")
+            time_to_wait = datetime.strptime(f'{one_hour_later.strftime("%y%m%d, %H")}:00:00','%y%m%d, %H:%M:%S') - datetime.now()
+        
+        #wait, until time is eighter at minute 30 or 00 --> show as progress bar
+        bar = tqdm(range(time_to_wait.seconds),position=2, ascii = True, desc="Time until Experiment starts")
+        for i in bar:
+            time.sleep(1)
+
         #update status
         self.indata["status"] = "Experiment startet but not finished"
         
@@ -173,30 +210,30 @@ class Experiment():
         motor_and_disc.start()
         camera.start()
         
-        print("Camera and Discs run: Please keyboard-interrupt (Str-C) the Experiment if you want to stop")
+        time.sleep(5) #wait for the progress-bars to start
+        print("Experiment runs: Please press Ctr-c to end the Experiment")
         try:
-            #Now wait for keyboardInterrupt
+            #Now wait for first (soft) keyboardInterrupt
             while True:
                 time.sleep(1)
         except:
             #end the running child-threads
-            motor_and_disc.running = False
             camera.running = False
-            
-            #make a nice user-information
-            time_to_wait = 30 % int(time.strftime("%M"))
-            if(time_to_wait == 30):
-                time_to_wait = 60%int(time.strftime("%M"))
-            
-            print("You stopped the Experiment")
-            print("Waiting for the current cycle to finish")
-            print(f"Finished in: {time_to_wait} minutes")
-            
-            #wait for the Threads to join       
-            #TODO: Problem: motor_and_disc Thread finishes way earlier than camera..
-            #So better make sure they are coordinated!
-            motor_and_disc.join()
+            #Wait for second (hard) Keyboard interrupt
+            try:
+                print("The Experiment ends after the current camera-cycle is done")
+                print("Press Ctr-c for instant stop of experiment")
+                bar = tqdm(range(30), ascii = True, desc = "Press Ctr-c now")
+                for i in bar:
+                    time.sleep(1)
+                    
+            except:
+               camera.breaking = True
+
+            #wait for the threads to join()
             camera.running.join()
+            motor_and_disc.breaking = True
+            motor_and_disc.join()
             
         finally:
             os.chdir(home) # Go back to original script-directory
@@ -235,7 +272,6 @@ class Experiment():
         archive.close()
 
     def shutdown(self):
-        #TODO: Stop everything, crons ended etc.
         #TODO: Check, that really everything is terminated --> Directories, temp-files, GPIO
         self.caroussel.stop_motor()
         self.caroussel.camera.stop_preview()
