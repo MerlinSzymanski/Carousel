@@ -8,7 +8,7 @@ import time
 from io import BytesIO
 import threading
 from threading import Thread
-
+from tqdm import tqdm #for fancy progress-bars
 
 class Experiment():
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
@@ -21,12 +21,15 @@ class Experiment():
         with open(infile,'r') as json_file:
             self.indata = (json.load(json_file))
             
-            self.indata['date'] = time.strftime("%y%m%d")
-            self.indata['time'] = time.strftime("%H%M%S")
+        self.indata['date'] = time.strftime("%y%m%d")
+        self.indata['time'] = time.strftime("%H%M%S")
+        self.indata['id'] = f'CARO_{self.indata["date"]}{self.indata["time"]}_{self.indata["rig"]}_{self.indata["sex"]}_{self.indata["genotype"]}_{self.indata["age"]}'
+
+        with open('save_files/temp/exp_settings.json','w') as temp:
+            json.dump(temp, self.indata, indent=2) #create temp-file for the later experiment-folder
+               
+        self.indata['status'] = "Experiment set up, but not started"
             
-            with open('save_files/temp/exp_settings.json','w') as temp:
-                json.dump(temp, self.indata, indent=2) #create temp-file for the later experiment-folder
-                
         #the GPIO - instance
         self.caroussel = Caroussel(self.indata)
   
@@ -35,6 +38,7 @@ class Experiment():
         """starts a python CRON-job in the Main before the experiment even begins Motor and light are therefor independend
         of the beginning of the experiment"""
         t = threading.current_thread()   #used to quit the cron-job later
+        t.running = True
         
         #1.1 Start the motors 
         self.caroussel.start_motor()
@@ -46,25 +50,44 @@ class Experiment():
             start_time_white = int(circ['white'])   #z.B. '6'
             start_time_red = int(circ['red'])       #z.B. '22'
         
-            while getattr(t,"running",True):
-                #Get the current hours
-                current_hour = int(datetime.strftime(datetime.now(),"%H"))
+            while True:
+                #Escape the thread, if necessary
+                if(t.running == False):
+                    break
+                
+                #Get the current hour
+                current_hour = int(time.strftime("%H"))
                 #Check if time is between 6 and 22 --> make white light, else red
                 if (start_time_white <= current_hour and current_hour < start_time_red):
-                    self.caroussel.set_daylight()
-                else:
-                    self.caroussel.set_nightlight()
 
-    #2. create temp-file
-    def get_experiment_id(self):
-        """create unique experiment-ID which contains the current settings"""
-        #2.1. create experiment-ID 
-        experiment_ID = f'CARO_{self.indata["date"]}{self.indata["time"]}_{self.indata["rig"]}_{self.indata["sex"]}\
-        _{self.indata["genotype"]}_{self.indata["age"]}'
-        #2.2. add the new information to the dic
-        self.indata['id'] = experiment_ID
-        self.indata['status'] = "Experiment set up, but not started"
-    
+                    #calculate the remaining seconds:
+                    self.caroussel.set_daylight()
+                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_red}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
+                    
+                    #print a nice barplot to stdout while waiting for light-change
+                    pibar = tqdm(range(timedelta.seconds))
+                    pibar.set_description("Cronjob - current Light: DAYLIGHT")
+                    for i in pibar:   
+                        time.sleep(1)
+                        if(t.running == False):
+                            break
+                
+                else:
+                    #calculate the remaining seconds:
+                    self.caroussel.set_nightlight()
+                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_white}:00:00','%y%m%d,%H:%M:S') - datetime.now()
+                    
+                    #print a nice barplot to stdout while waiting for light-change
+                    pibar = tqdm(range(timedelta.seconds))
+                    pibar.set_description("Cronjob - current Light: NIGHTLIGHT")
+                    for i in pibar:
+                        time.sleep(1)
+                        if(t.running == False):
+                            break
+
+        print('Terminating the Cron-Job for the light')
+        
+        
     def start_motor_and_disc(self):
         
         t = threading.current_thread()

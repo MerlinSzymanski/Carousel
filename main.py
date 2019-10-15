@@ -20,11 +20,10 @@ def main():
         #2.1 start the cron_job --> light and motor
     cron_job = Thread(target=experiment.cron)
     cron_job.start()    
-        #2.2 get ID for the archive and the logging
-    experiment.get_experiment_id() 
-        #2.3 start the actual experiment
+
+        #2.2 start the actual experiment
     experiment.start()
-        #2.4 archive the experiment
+        #2.3 archive the experiment
     experiment.archive_experiment()
     
         #2.5 terminate the cron-job
