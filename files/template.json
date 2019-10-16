@@ -8,7 +8,7 @@
     "food": "Agar",
     "sex": "m",
     "genotype": "wildtype",
-    "age": 0.2,
+    "age":0.2,
     "camera": "piCamera",
     "circRythm":"6:22LD",
     "motor_switchtime": 5,

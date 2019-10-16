@@ -50,8 +50,8 @@ def get_arguments():
 def get_data_from_gui():
     '''If GUI is chosen, create GUI instance and proceed with the data input'''
     interface = GUI()
-    filename = interface.get_data()
-    return filename
+    interface.run() 
+    return interface.infile
 
 if(__name__ == "__main__"):
     main()
