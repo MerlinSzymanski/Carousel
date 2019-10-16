@@ -8,6 +8,7 @@ import time
 from io import BytesIO
 import threading
 from threading import Thread
+import glob
 from tqdm import tqdm #for fancy progress-bars
 
 class Experiment():
@@ -28,12 +29,16 @@ class Experiment():
             json.dump(self.indata, temp, indent=2) #create temp-file for the later experiment-folder
                
         self.indata['status'] = "Experiment set up, but not started"
-            
+        
         #the GPIO - instance
         self.caroussel = Caroussel(self.indata)
         
-    
-    def println(self,char = "-"):
+        #some stats to print at the end
+        self.begin = datetime.fromtimestamp(time.time())
+        self.end = 0
+        self.videos = 0
+        
+    def println(self,char = "-"):   #This method causes the threads to crash... Why?
         terminal_size = shutil.get_terminal_size((80,20))[0]
         tqdm.write(char*terminal_size)
     
@@ -171,13 +176,10 @@ class Experiment():
     def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
+        time.sleep(2) #to not conflict with the cronjob at the start
         self.println()
-        time.sleep(0.1)
-        self.println(" ")
         tqdm.write("1. Initiation of the Experiment. Starting Light and Motor")
         #Make the folder-structure
-        home = os.getcwd()
-        time.sleep(2) #to not conflict with the cronjob at the start
         try:
             os.mkdir('save_files/experiment/')
             os.chdir('save_files/experiment/')
@@ -211,9 +213,6 @@ class Experiment():
         bar = tqdm(range(time_to_wait.seconds),position=1, ascii = True, desc="Time until Experiment starts")
         for i in bar:
             time.sleep(1)
-
-        #update status
-        self.indata["status"] = "Experiment startet but not finished"
         
         #update status-message
         self.println()
@@ -249,9 +248,13 @@ class Experiment():
             motor_and_disc.join()
             
         finally:
-            os.chdir(home) # Go back to original script-directory
             #update status
-            self.indata['status'] = f'Experiment finished {time.strftime("%d.%m.%y_%H:%M")}'
+            if(len(glob.glob("*.h264")) > 1):
+                self.videos = len(glob.glob("*.h264"))
+                self.indata['status'] = f'Experiment finished {time.strftime("%d.%m.%y_%H:%M")} with {self.videos} clips'
+            else:
+                self.indata["status"] = f"Experiment startet - but no clips produced"
+            return 1
 
     #4. Archive the experiment
     def archive_experiment(self):
@@ -283,9 +286,13 @@ class Experiment():
                 
         writer.writerow(archive_data)
         archive.close()
-
-    def shutdown(self):
-        time.sleep(2)
+        
+    def print_end_statistics(self):
+        self.end = datetime.fromtimestamp(time.time())
+        self.runtime = str(self.end - self.begin).split(':')
+        
+        time.sleep(2) #waiting for the bars 
+        #Now some pretty formating
         for i in range(6):
             print("")
         for i in range(2):
@@ -294,15 +301,23 @@ class Experiment():
 
         for thread in ["Light","Camera","Motor"]:
             print(f"Thread: {thread} - terminated")
-
+        
+        print(f'Experiment {self.indata["id"]} finished')
+        print(f'The Experiment ran for {self.runtime[0]} hours, {self.runtime[1]} minutes and {self.runtime[2]} seconds')
+        print(f'{self.videos} clips were produced')
+        print("")
+        for i in range(2):
+            print("#"*self.terminal_size)
+        
+    
+    def shutdown(self):
+        
         #TODO: Check, that really everything is terminated --> Directories, temp-files, GPIO
         self.caroussel.stop_motor()
         self.caroussel.camera.stop_preview()
         self.caroussel.camera_close()
         self.caroussel.shut_light()
         self.caroussel.GPIO.cleanup()
+        
+        self.print_end_statistics()
 
-        print(f'Experiment {self.indata["id"]} finished')
-        print("")
-        for i in range(2):
-            print("#"*self.terminal_size)

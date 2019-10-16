@@ -2,8 +2,7 @@ from experiment import Experiment
 from GUI import GUI
 from threading import Thread
 import argparse
-import time
-from tqdm import tqdm
+import os
 
 def main():
     """This Main method is used to decide, if one wants to provide an input-file with all the necessary experiment-data
@@ -21,22 +20,23 @@ def main():
     experiment = Experiment(infile)
         #2.1 start the cron_job --> light and motor
     cron_job = Thread(target=experiment.cron)
-    cron_job.start()    
-
+    cron_job.start()
+    home = os.getcwd()
+    try:
         #2.2 start the actual experiment
-    experiment.start()
+        experiment.start()
         #2.3 archive the experiment
-    #TODO: status --> archive data. Right now it shows always "Experiment finished"
-    experiment.archive_experiment()
-    
+        #TODO: status --> archive data. Right now it shows always "Experiment finished"
+    except:
+        print("Experiment terminated with error. please try again")
         #2.5 terminate the cron-job
-    cron_job.running = False
-    cron_job.join()
+    finally:  
+        os.chdir(home)
+        cron_job.running = False
+        cron_job.join()
+        experiment.archive_experiment()
+        experiment.shutdown()
     
-    experiment.shutdown()
-    time.sleep(5)
-    
-
 def get_arguments():
     '''This method implements argparse to get the user-decision about the input'''
     parser = argparse.ArgumentParser(description='CAROUSSEL: Lets Play. A script to start a motor at the right time. Please choose a way to enter experiment-settings and data')
