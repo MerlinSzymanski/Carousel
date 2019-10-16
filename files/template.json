@@ -10,7 +10,7 @@
     "genotype": "wildtype",
     "age": 0.2,
     "camera": "piCamera",
-    "circRhytm":"6:22LD",
+    "circRythm":"6:22LD",
     "motor_switchtime": 5,
     "motor1_direction":"cw",
     "motor2_direction":"same",

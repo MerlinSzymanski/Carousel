@@ -3,6 +3,7 @@ from GUI import GUI
 from threading import Thread
 import argparse
 import time
+from tqdm import tqdm
 
 def main():
     """This Main method is used to decide, if one wants to provide an input-file with all the necessary experiment-data
@@ -25,6 +26,7 @@ def main():
         #2.2 start the actual experiment
     experiment.start()
         #2.3 archive the experiment
+    #TODO: status --> archive data. Right now it shows always "Experiment finished"
     experiment.archive_experiment()
     
         #2.5 terminate the cron-job
@@ -32,9 +34,6 @@ def main():
     cron_job.join()
     
     experiment.shutdown()
-    print()
-    print()
-    print("Experiment over")
     time.sleep(5)
     
 

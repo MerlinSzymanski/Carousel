@@ -14,7 +14,6 @@ class Experiment():
     """This class stores everything necessary for the experiment. It contains an instance of the Caroussel, the 
     start-method for the experiment and creates the archive. The necessary data comes from an input_file. Pure informational
     data is not implemented (e.g. rig-number or genotype) but later saved directly into the archive"""
-	
     def __init__(self, infile):
         
         #All the data used only for the archive
@@ -32,7 +31,12 @@ class Experiment():
             
         #the GPIO - instance
         self.caroussel = Caroussel(self.indata)
-  
+        
+    
+    def println(self,char = "-"):
+        terminal_size = shutil.get_terminal_size((80,20))[0]
+        tqdm.write(char*terminal_size)
+    
     #1. Start the CronJob
     def cron(self):
         """starts a python CRON-job in the Main before the experiment even begins Motor and light are therefor independend
@@ -44,7 +48,7 @@ class Experiment():
         self.caroussel.start_motor()
         
         #1.2.regulate the light according to the CircRhythm
-        with open('../../files/circrythm.json','r') as circ_file:
+        with open('files/circrythm.json','r') as circ_file:
             settings = (json.load(circ_file))
             for setting in settings:
                 if(self.indata['circRythm'] in setting):
@@ -61,7 +65,6 @@ class Experiment():
                 #Get the current hour
                 current_hour = int(time.strftime("%H"))
                 #Check if time is between 6 and 22 --> make white light, else red
-                
                 if (start_time_white <= current_hour and current_hour < start_time_red):
 
                     #calculate the remaining seconds:
@@ -85,8 +88,6 @@ class Experiment():
                         time.sleep(1)
                         if(t.running == False):
                             break
-
-        tqdm.write('Thread: Light - Terminated')
         return 1
         
     def start_motor_and_disc(self):
@@ -124,11 +125,8 @@ class Experiment():
                 time.sleep(1)  
                 if(t.breaking): #to end the thread
                     break
-        
-        tqdm.write('Thread: Motordirection and Discs - Terminated')
         return 1 #Necessary for the joining of the threads
         
-    ###NOT YET DONE###
     def start_camera(self):
         #Thread-related stuff ... to remote-stop the process
         t = threading.current_thread() 
@@ -168,14 +166,15 @@ class Experiment():
                 
             time.sleep(0.05)
             n += 1
-    
-        tqdm.write('Thread: Camera - terminated')
         return 1 #Necessary for the joining of the threads
         
     def start(self):
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
-       
+        self.println()
+        time.sleep(0.1)
+        self.println(" ")
+        tqdm.write("1. Initiation of the Experiment. Starting Light and Motor")
         #Make the folder-structure
         home = os.getcwd()
         time.sleep(2) #to not conflict with the cronjob at the start
@@ -206,6 +205,9 @@ class Experiment():
             time_to_wait = datetime.strptime(f'{one_hour_later.strftime("%y%m%d, %H")}:00:00','%y%m%d, %H:%M:%S') - datetime.now()
         
         #wait, until time is eighter at minute 30 or 00 --> show as progress bar
+        self.println()
+        self.println(" ")
+        tqdm.write("2. Please wait. The experiments starts at the next full half hour (30:00 or 00:00)")
         bar = tqdm(range(time_to_wait.seconds),position=1, ascii = True, desc="Time until Experiment starts")
         for i in bar:
             time.sleep(1)
@@ -213,12 +215,16 @@ class Experiment():
         #update status
         self.indata["status"] = "Experiment startet but not finished"
         
+        #update status-message
+        self.println()
+        self.println(" ")
+        tqdm.write("3. Experiment runs: Please press Ctr-c to end the Experiment")
+        
         #start the child-threads
         motor_and_disc.start()
         camera.start()
+        time.sleep(0.1) #wait for the progress-bars to start
         
-        time.sleep(5) #wait for the progress-bars to start
-        tqdm.write("Experiment runs: Please press Ctr-c to end the Experiment")
         try:
             #Now wait for first (soft) keyboardInterrupt
             while True:
@@ -228,7 +234,9 @@ class Experiment():
             camera.running = False
             #Wait for second (hard) Keyboard interrupt
             try:
-                tqdm.write("The Experiment ends after the current camera-cycle is done. Press Ctr-c for instant stop of experiment")
+                for i in range(2):
+                    self.println()
+                tqdm.write("4. The Experiment ends after the current camera-cycle is done. Press Ctr-c for instant stop of experiment")
                 bar = tqdm(range(30),position = 1, ascii = True, desc = "Press Ctr-c now")
                 for i in bar:
                     time.sleep(1)
@@ -236,9 +244,8 @@ class Experiment():
                camera.breaking = True
 
             #wait for the threads to join()
-            camera.running.join()
+            camera.join()
             motor_and_disc.breaking = True
-            
             motor_and_disc.join()
             
         finally:
@@ -278,10 +285,24 @@ class Experiment():
         archive.close()
 
     def shutdown(self):
+        time.sleep(2)
+        for i in range(6):
+            print("")
+        for i in range(2):
+            print("#"*self.terminal_size)
+        print(" "*self.terminal_size)
+
+        for thread in ["Light","Camera","Motor"]:
+            print(f"Thread: {thread} - terminated")
+
         #TODO: Check, that really everything is terminated --> Directories, temp-files, GPIO
         self.caroussel.stop_motor()
         self.caroussel.camera.stop_preview()
         self.caroussel.camera_close()
         self.caroussel.shut_light()
         self.caroussel.GPIO.cleanup()
-    
+
+        print(f'Experiment {self.indata["id"]} finished')
+        print("")
+        for i in range(2):
+            print("#"*self.terminal_size)
