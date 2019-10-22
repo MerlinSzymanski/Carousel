@@ -304,7 +304,7 @@ class Experiment():
         print(" "*self.terminal_size)
 
         for thread in ["Light","Camera","Motor"]:
-            print(f"Thread: {thread} - terminated")
+            print("Thread: {} - terminated".format(thread))
         
         print('Experiment {} finished'.format(self.indata["id"]))
         print('The Experiment ran for {} hours, {} minutes and {} seconds'.format(self.runtime[0],self.runtime[1],self.runtime[2]))
