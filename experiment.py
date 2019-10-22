@@ -23,13 +23,13 @@ class Experiment():
             
         self.indata['date'] = time.strftime("%y%m%d")
         self.indata['time'] = time.strftime("%H%M%S")
-        self.indata['id'] = f'CARO_{self.indata["date"]}{self.indata["time"]}_{self.indata["rig"]}_{self.indata["sex"]}_{self.indata["genotype"]}_{self.indata["age"]}'
+        self.indata['id'] = 'CARO_{}{}_{}_{}_{}_{}'.format(self.indata["date"],self.indata["time"],self.indata["rig"],self.indata["sex"],self.indata["genotype"],self.indata["age"])
 
         with open('save_files/temp/exp_settings.json','w') as temp:
             json.dump(self.indata, temp, indent=2) #create temp-file for the later experiment-folder
                
         self.indata['status'] = "Experiment set up, but not started"
-        
+        self.terminal_size = shutil.get_terminal_size((80,20))[0]
         #the GPIO - instance
         self.caroussel = Caroussel(self.indata)
         
@@ -37,10 +37,6 @@ class Experiment():
         self.begin = datetime.fromtimestamp(time.time())
         self.end = 0
         self.videos = 0
-        
-    def println(self,char = "-"):   #This method causes the threads to crash... Why?
-        terminal_size = shutil.get_terminal_size((80,20))[0]
-        tqdm.write(char*terminal_size)
     
     #1. Start the CronJob
     def cron(self):
@@ -74,7 +70,10 @@ class Experiment():
 
                     #calculate the remaining seconds:
                     self.caroussel.set_daylight()
-                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_red}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
+
+                    temp1 = time.strftime("%y%m%d")
+                    temp2 = str(start_time_red)+":00:00"
+                    timedelta = datetime.strptime('{},{}'.format(temp1,temp2),'%y%m%d,%H:%M:%S') - datetime.now()
                     
                     #print barplot to position 1 showing time until light change
                     pibar = tqdm(range(timedelta.seconds),position = 2, ascii = True, desc = "Current Light: Daylight(White)")
@@ -85,7 +84,9 @@ class Experiment():
                 else:
                     #calculate the remaining seconds:
                     self.caroussel.set_nightlight()
-                    timedelta = datetime.strptime(f'{time.strftime("%y%m%d")},{start_time_white}:00:00','%y%m%d,%H:%M:%S') - datetime.now()
+                    temp1 = time.strftime("%y%m%d")
+                    temp2 = str(start_time_white)+":00:00"
+                    timedelta = datetime.strptime('{},{}'.format(temp1,temp2),'%y%m%d,%H:%M:%S') - datetime.now()
                     
                     #print a nice barplot to stdout while waiting for light-change
                     pibar = tqdm(range(timedelta.seconds), position = 1, ascii = True, desc = "Current Light: Nightlight(Red)")
@@ -116,7 +117,7 @@ class Experiment():
                 break
             
             #fancy progress bar, showing the spin-direction 
-            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = f"Motor 1, Spindirection: {direction1}") 
+            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = "Motor 1, Spindirection: {}".format(direction1)) 
             self.caroussel.turn_motor1(direction1) #let the motor1 turn
             for i in bar:   
                 time.sleep(1) 
@@ -124,7 +125,7 @@ class Experiment():
                     break
                 
             #Overwrite bar at position 2
-            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = f"Motor 2, Spindirection: {direction2}")
+            bar = tqdm(range(switch_time), position = 3, ascii = True, desc = "Motor 2, Spindirection: {}".format(direction2))
             self.caroussel.turn_motor2(direction2) #let the motor2 turn 
             for i in bar:
                 time.sleep(1)  
@@ -150,7 +151,7 @@ class Experiment():
             
             #Yes: create stream
             stream = BytesIO()
-            video_name = f'{self.indata["id"]}_L_{0:03}.h264'.format(n)   
+            video_name = '{}_L_{0:03}.h264'.format(self.indata["id"],n)   
             #start recording to the stream
             self.caroussel.camera.start_recording(stream, format='h264', resize = (768,768))
             #TODO: Change that to Frames, not seconds! --> not possible with piCamera
@@ -177,7 +178,7 @@ class Experiment():
         """Run the actual experiment. Waits until the time is eighter full hour or half hour, then starts the Caroussel (one Thread) and records the caroussels in an 
         never ending loop (Thread2) until the experiment is stopped via Keyboard interrupt"""
         time.sleep(2) #to not conflict with the cronjob at the start
-        self.println()
+        tqdm.write("-"*self.terminal_size)
         tqdm.write("1. Initiation of the Experiment. Starting Light and Motor")
         #Make the folder-structure
         try:
@@ -187,8 +188,8 @@ class Experiment():
             os.chdir('save_files/experiment/')
             
         #make Folder with the name of the Experiment 
-        os.mkdir(f'{self.indata["id"]}/')
-        os.chdir(f'{self.indata["id"]}/') 
+        os.mkdir('{}/'.format(self.indata["id"]))
+        os.chdir('{}/'.format(self.indata["id"])) 
         
         #Copy the experiment-settings into the folder
         shutil.copy('../../temp/exp_settings.json','experiment_settings.json') 
@@ -200,23 +201,26 @@ class Experiment():
         #Get timedelta to next Experiment-start (eighter 30:00 or 00:00)
         
         if(int(time.strftime("%M")) < 30):
-            time_to_wait = datetime.strptime(f'{time.strftime("%y%m%d, %H")}:30:00','%y%m%d, %H:%M:%S') - datetime.now()
+            temp1 = time.strftime("%y%m%d, %H")
+            time_to_wait = datetime.strptime('{}:30:00'.format(temp1),'%y%m%d, %H:%M:%S') - datetime.now()
         else:
             #one-liner for the better readability... just get the timedate object for one hour in the future... 
-            one_hour_later = datetime.strptime(f'{time.strftime("%y%m%d, %H:%M:%S").replace(time.strftime("%H"),str((int(time.strftime("%H"))+1)%24))}',"%y%m%d, %H:%M:%S")
-            time_to_wait = datetime.strptime(f'{one_hour_later.strftime("%y%m%d, %H")}:00:00','%y%m%d, %H:%M:%S') - datetime.now()
+            temp1 = time.strftime("%y%m%d, %H:%M:%S").replace(time.strftime("%H"),str((int(time.strftime("%H"))+1)%24))
+            one_hour_later = datetime.strptime('{}'.format(temp1),"%y%m%d, %H:%M:%S")
+            temp2 = one_hour_later.strftime("%y%m%d, %H")+":00:00"
+            time_to_wait = datetime.strptime('{}'.format(temp2),'%y%m%d, %H:%M:%S') - datetime.now()
         
         #wait, until time is eighter at minute 30 or 00 --> show as progress bar
-        self.println()
-        self.println(" ")
+        tqdm.write("-"*self.terminal_size)
+        tqdm.write(" "*self.terminal_size)
         tqdm.write("2. Please wait. The experiments starts at the next full half hour (30:00 or 00:00)")
         bar = tqdm(range(time_to_wait.seconds),position=1, ascii = True, desc="Time until Experiment starts")
         for i in bar:
             time.sleep(1)
         
         #update status-message
-        self.println()
-        self.println(" ")
+        tqdm.write("-"*self.terminal_size)
+        tqdm.write(" "*self.terminal_size)
         tqdm.write("3. Experiment runs: Please press Ctr-c to end the Experiment")
         
         #start the child-threads
@@ -234,7 +238,7 @@ class Experiment():
             #Wait for second (hard) Keyboard interrupt
             try:
                 for i in range(2):
-                    self.println()
+                    tqdm.write("-"*self.terminal_size)
                 tqdm.write("4. The Experiment ends after the current camera-cycle is done. Press Ctr-c for instant stop of experiment")
                 bar = tqdm(range(30),position = 1, ascii = True, desc = "Press Ctr-c now")
                 for i in bar:
@@ -251,16 +255,16 @@ class Experiment():
             #update status
             if(len(glob.glob("*.h264")) > 1):
                 self.videos = len(glob.glob("*.h264"))
-                self.indata['status'] = f'Experiment finished {time.strftime("%d.%m.%y_%H:%M")} with {self.videos} clips'
+                self.indata['status'] = 'Experiment finished {} with {} clips'.format(time.strftime("%d.%m.%y_%H:%M"),str(self.videos))
             else:
-                self.indata["status"] = f"Experiment startet - but no clips produced"
+                self.indata["status"] = "Experiment startet - but no clips produced"
             return 1
 
     #4. Archive the experiment
     def archive_experiment(self):
         """open THE archive-file and save the Experiment data"""
         
-        archive = open(f'save_files/ExperimentArchive.tsv', 'a')
+        archive = open('save_files/ExperimentArchive.tsv', 'a')
         writer = csv.writer(archive, delimiter='\t')
         
         archive_data = [self.indata['id'], 
@@ -302,9 +306,9 @@ class Experiment():
         for thread in ["Light","Camera","Motor"]:
             print(f"Thread: {thread} - terminated")
         
-        print(f'Experiment {self.indata["id"]} finished')
-        print(f'The Experiment ran for {self.runtime[0]} hours, {self.runtime[1]} minutes and {self.runtime[2]} seconds')
-        print(f'{self.videos} clips were produced')
+        print('Experiment {} finished'.format(self.indata["id"]))
+        print('The Experiment ran for {} hours, {} minutes and {} seconds'.format(self.runtime[0],self.runtime[1],self.runtime[2]))
+        print('{} clips were produced'.format(self.videos))
         print("")
         for i in range(2):
             print("#"*self.terminal_size)
