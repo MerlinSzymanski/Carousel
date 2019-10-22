@@ -16,24 +16,19 @@ class Caroussel():
         
         #TODO: GPIO outside the class?
         # Use board pin numbering
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         #You need to set up every channel you are using as an input or an output.
         #To configure a channel as an input
         
-        GPIO.setup(22, GPIO.OUT)    ## Setup redLED
-        GPIO.setup(27, GPIO.OUT)    ## Setup whiteLED
-        GPIO.setup(24, GPIO.OUT)    ## Setup Motor1 Speed
-        GPIO.setup(25, GPIO.OUT)    ## Setup Motor2 Speed
-        GPIO.setup(18, GPIO.OUT)    ## Setup Motor1 Direction
-        GPIO.setup(23, GPIO.OUT)    ## Setup Motor2 Direction  
-        GPIO.setup(3, GPIO.OUT)     ## Setup Magnet1 
-        GPIO.setup(4, GPIO.OUT)     ## Setup Magnet2 
-        """I dont know yet what is responsible for what... Magnet just for discPosition? 
-        i thought there is a way of starting the motors without movements? But i think I have to test it directly
-        on the Raspberry"""
-        #discposition
-        self.disc1pos = 0
-        self.disc2pos = 0
+        GPIO.setup(27, GPIO.OUT)    ## Setup redLED --> GPIO.output(27,False) = White LED on
+        GPIO.setup(22, GPIO.OUT)    ## Setup whiteLED --> GPIO.output(22,False) = Red LED on
+        GPIO.setup(24, GPIO.OUT)    ## Setup Motor1 Speed --> GPIO.output(24,True) = motor1 turns
+        GPIO.setup(25, GPIO.OUT)    ## Setup Motor2 Speed --> GPIO.output(25,True) = motor2 turns
+        GPIO.setup(18, GPIO.OUT)    ## Setup Motor1 Direction --> GPIO.output(18,True) = ccw
+        GPIO.setup(23, GPIO.OUT)    ## Setup Motor2 Direction  --> GPIO.output(23,True) = ccw
+        GPIO.setup(3, GPIO.OUT)     ## Setup Magnet1 --> GPIO.output(3,True) = if(motor1): disc1 turns
+        GPIO.setup(4, GPIO.OUT)     ## Setup Magnet2 --> GPIO.output(4,True) = if(motor2): disc2 turns
+
         #motor
         self.motor1dir = True #True = cw, False = ccw
         
@@ -55,72 +50,57 @@ class Caroussel():
     def start_motor(self):
     #TODO: start the motor without turning the discs?
     #part of the cronjob started in main -> experiment.cron()
+        GPIO.output([3,4],False)     #Set the magnets,so that the caroussels don't move
         GPIO.output([24,25],True)   #starts channels 24,25 (motors)
-        GPIO.output([3,4],True)     #starts the magnets (caroussels dont move) 
+
+    def stop_motors(self):
+        GPIO.output([24,25],False)
 
     def set_nightlight(self):
     #part of the cronjob started in main -> experiment.cron()
         if(self.redlight == False):
-            GPIO.output(27,GPIO.LOW)    #white off
-            GPIO.output(22,GPIO.HIGH)   #red on
+            GPIO.output(27,True)    #white off
+            GPIO.output(22,False)   #red on
             self.whitelight = False
             self.redlight = True
 
     def set_daylight(self):
     #part of the cronjob started in main -> experiment.cron()
         if(self.whitelight == False):
-            GPIO.output(27,GPIO.HIGH)   #white on
-            GPIO.output(22,GPIO.LOW)    #red off
+            GPIO.output(27,False)   #white on
+            GPIO.output(22,True)    #red off
             self.redlight = False
             self.whitelight = True
 
     def shut_light(self):
-        if(self.whitelight == True):
-            GPIO.output(27,GPIO.LOW)    #white off
-        if(self.redlight == True):
-            GPIO.output(22,GPIO.LOW)
-        
-    def set_disc_position(self,number,position):
-        #Set the disc-number to the corresponding position
-        if(number == 1):
-            if(position < 0 and self.disc1pos == 0):
-                GPIO.output(3, GPIO.HIGH)   #Magnet on - lower disc?
-                self.disc1pos = -1
-            elif(position == 0 and self.disc1pos < 0):
-                GPIO.output(3, GPIO.LOW)   #Magnet off - higher disc?
-                self.disc1pos = 0
-        if(number == 2):
-            if(position < 0 and self.disc2pos == 0):
-                GPIO.output(4, GPIO.HIGH)   #Magnet on - lower disc?
-                self.disc1pos = -1
-            elif(position == 0 and self.disc2pos < 0):
-                GPIO.output(4, GPIO.LOW)   #Magnet off - higher disc?
-                self.disc1pos = 0                
+            GPIO.output([22,27],True)    #white off           
         
     def stop_turning_motor2(self):
-        #TODO: How to stop turning, without stopping the motor?
-        GPIO.output(23, GPIO.LOW)   #Motor2 out?  
+        GPIO.output(23, False)   #Motor2 out?  
         
     def stop_turning_motor1(self):
-        GPIO.output(18, GPIO.LOW)   #Motor1 out?               
+        GPIO.output(18, False)   #Motor1 out?               
                 
                 
     def turn_motor1(self,direction1):
         self.stop_turning_motor2()
         if(direction1 == 'cw'):
-            GPIO.output(18, GPIO.HIGH)  #Motor1 clockwise?
+            GPIO.output(18, False)  #Motor1 clockwise?
             self.motor1dir = True
         elif(direction1 == 'ccw'):
-            GPIO.output(18, GPIO.LOW)   #Motor1 counterclockwise?
+            GPIO.output(18, True)   #Motor1 counterclockwise?
             self.motor1dir = False
                
     def turn_motor2(self,direction2):
         self.stop_turning_motor1()
         if(direction2 == 'same' and self.motor1dir):
-            GPIO.output(23, GPIO.HIGH)  #Motor2 clockwise?
+            GPIO.output(23, False)  #Motor2 clockwise?
         elif(direction2 == 'same' and not self.motor1dir):
-            GPIO.output(23, GPIO.LOW)  #Motor2 counterclockwise?
+            GPIO.output(23, True)  #Motor2 counterclockwise?
         elif(direction2 == 'different' and self.motor1dir):
-            GPIO.output(23, GPIO.LOW)  #Motor2 counterclockwise?        
+            GPIO.output(23, True)  #Motor2 counterclockwise?        
         elif(direction2 == 'different' and not self.motor1dir):
-            GPIO.output(23, GPIO.HIGH)  #Motor2 clockwise?        
+            GPIO.output(23, False)  #Motor2 clockwise?  
+
+    def cleanup(self):
+        GPIO.cleanup()      

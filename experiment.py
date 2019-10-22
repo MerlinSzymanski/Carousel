@@ -100,11 +100,8 @@ class Experiment():
         t = threading.current_thread()
         t.breaking = False
         
-        #lets start with the disc
-        self.caroussel.set_disc_position(1,self.indata['disc1_pos'])
-        self.caroussel.set_disc_position(2,self.indata['disc2_pos'])
-        
-        #Now the motor_direction. it starts with motor1 and changes to motor2
+        #NO DISC FUNCTION: NAME IS FOR HISTORICAL REASONS
+        #Get the motor_direction. it starts with motor1 and changes to motor2
         #after the switch-time. and so on and so forth.
         
         direction1 = self.indata['motor1_direction']
@@ -296,7 +293,7 @@ class Experiment():
         self.runtime = str(self.end - self.begin).split(':')
         
         time.sleep(2) #waiting for the bars 
-        #Now some pretty formating
+        #Now some pretty formatting
         for i in range(6):
             print("")
         for i in range(2):
@@ -315,13 +312,11 @@ class Experiment():
         
     
     def shutdown(self):
-        
-        #TODO: Check, that really everything is terminated --> Directories, temp-files, GPIO
-        self.caroussel.stop_motor()
+        self.caroussel.stop_motors()
+        self.caroussel.shut_light()
+        self.caroussel.cleanup()        
+        self.print_end_statistics()
         self.caroussel.camera.stop_preview()
         self.caroussel.camera_close()
-        self.caroussel.shut_light()
-        self.caroussel.GPIO.cleanup()
-        
-        self.print_end_statistics()
+
 
