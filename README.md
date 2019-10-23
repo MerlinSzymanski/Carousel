@@ -1,7 +1,7 @@
 # Caro #
 A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. Wolf Hütteroth and Dr. Tilman Triphan from the University of Leipzig/Würzburg to test the behavior of Drosophila in the presence of a turning disc. This Script regulates the light, the turning of the discs and the camera. Input = Experiment-File (s. 3.), Output = Video-files for downstream analysis of Drosophila movement-patterns
 
-## Dependencies ##:
+## Dependencies: ##
 - Conda
 - Python 3.4
 - picamera
@@ -10,7 +10,7 @@ A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. W
 
 TODO: Create caro.yml-file to just create a fitting environment!
 
-## 1. Getting started ##
+## 1. Getting started: ##
 (I assume, that you have a Raspberry prepared)
 1. Clone this repository onto your Raspberry by typing:
 <pre><code>git clone https://github.com/MerlinSzymanski/Carousel</code></pre>
@@ -20,7 +20,7 @@ TODO: Create caro.yml-file to just create a fitting environment!
 <pre><code>conda env create -f caro.yml
 conda activate caro </code></pre>
 
-## 2. Running the experiment ##
+## 2. Running the experiment: ##
 If you are in the Carousel/ directory you can run the help-section by typing:
 <pre><code>python3 main.py -h</code></pre>
 Available flags are: 
@@ -36,7 +36,7 @@ When the Time is either %H:30:00 or %H:00:00:
 When the program is interrupted:
 4. End the currently running video (or force-quit) and shut down the Caroussel
 
-## 3. Data to provide ##
+## 3. Data to provide: ##
 You can see in the GUI what should be provided...
 ### Necessary for the Script: ###
 - **circRythm**: e.g. "6:22LD" = from 06:00 - 22:00 white light, from 22:00 - 06:00 Red Light. Please specify your regimes in files/circrythm.json
