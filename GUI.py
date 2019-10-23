@@ -265,3 +265,5 @@ class GUI():
         start_button.place(relx = 0.25, rely = 0.5, relwidth = 0.5, relheight = 0.2)
         
         self.root.mainloop()
+gui = GUI()
+gui.run()

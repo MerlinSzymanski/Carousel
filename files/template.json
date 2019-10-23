@@ -1,6 +1,4 @@
 {
-    "date": "yyyymmdd",
-    "time": "hhmmss",
     "rig": "01",
     "temperature": 37.0,
     "humidity": 25.0,
