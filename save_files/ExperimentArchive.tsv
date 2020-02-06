@@ -1,1 +1,13 @@
 id date time rig temp humidity circRhythm videolength FPS food sex genotype age motor1_direction motor2_direction switch_time disc1_position disc2_position comment status
+CARO_200206170530_01_m_wildtype_0.2	200206	170530	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment set up, but not started
+CARO_200206171004_01_m_wildtype_0.2	200206	171004	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment set up, but not started
+CARO_200206171015_01_m_wildtype_0.2	200206	171015	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment set up, but not started
+CARO_200206171128_01_m_wildtype_0.2	200206	171128	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206171829_01_m_wildtype_0.2	200206	171829	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206172501_01_m_wildtype_0.2	200206	172501	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206173902_01_m_wildtype_0.2	200206	173902	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206174556_01_m_wildtype_0.2	200206	174556	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206175717_01_m_wildtype_0.2	200206	175717	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206180057_01_m_wildtype_0.2	200206	180057	01	37.0	25.0	6:22LD	300	5	Agar	m	wildtype	0.2	ccw	same	1	0	0	was für ein nettes Experiment	Experiment finished 06.02.20_18:06 with 5 clips
+CARO_200206181151_01_m_wildtype_0.2	200206	181151	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced
+CARO_200206181334_01_m_wildtype_0.2	200206	181334	01	37.0	25.0	6:22LD	9000	5	Agar	m	wildtype	0.2	cw	same	5	0	0	was für ein nettes Experiment	Experiment startet - but no clips produced

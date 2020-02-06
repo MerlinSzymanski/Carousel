@@ -49,11 +49,11 @@ class Experiment():
         self.caroussel.start_motor()
         
         #1.2.regulate the light according to the CircRhythm
-        with open('files/circrythm.json','r') as circ_file:
+        with open('files/circRhythm.json','r') as circ_file:
             settings = (json.load(circ_file))
             for setting in settings:
-                if(self.indata['circRythm'] in setting):
-                    circ = setting[self.indata['circRythm']]
+                if(self.indata['circRhythm'] in setting):
+                    circ = setting[self.indata['circRhythm']]
                     
             start_time_white = int(circ['white'])   #z.B. '6'
             start_time_red = int(circ['red'])       #z.B. '22'
@@ -148,7 +148,7 @@ class Experiment():
             
             #Yes: create stream
             stream = BytesIO()
-            video_name = '{}_L_{0:03}.h264'.format(self.indata["id"],n)   
+            video_name = '{}_L_{:03d}.h264'.format(self.indata["id"],n)   
             #start recording to the stream
             self.caroussel.camera.start_recording(stream, format='h264', resize = (768,768))
             #TODO: Change that to Frames, not seconds! --> not possible with piCamera
@@ -196,10 +196,10 @@ class Experiment():
         camera = Thread(target=self.start_camera)
         
         #Get timedelta to next Experiment-start (eighter 30:00 or 00:00)
-        
+        """
         if(int(time.strftime("%M")) < 30):
             temp1 = time.strftime("%y%m%d, %H")
-            time_to_wait = datetime.strptime('{}:30:00'.format(temp1),'%y%m%d, %H:%M:%S') - datetime.now()
+            time_to_wait = datetime.strptime('{}:30'.format(temp1),'%y%m%d, %H:%M:%S') - datetime.now()
         else:
             #one-liner for the better readability... just get the timedate object for one hour in the future... 
             temp1 = time.strftime("%y%m%d, %H:%M:%S").replace(time.strftime("%H"),str((int(time.strftime("%H"))+1)%24))
@@ -219,7 +219,7 @@ class Experiment():
         tqdm.write("-"*self.terminal_size)
         tqdm.write(" "*self.terminal_size)
         tqdm.write("3. Experiment runs: Please press Ctr-c to end the Experiment")
-        
+        """
         #start the child-threads
         motor_and_disc.start()
         camera.start()
@@ -270,7 +270,7 @@ class Experiment():
                         self.indata['rig'],
                         self.indata['temperature'],
                         self.indata['humidity'],
-                        self.indata['circRythm'],
+                        self.indata['circRhythm'],
                         self.indata['video_length'],
                         self.indata['FPS'],
                         self.indata['food'],
@@ -317,6 +317,6 @@ class Experiment():
         self.caroussel.cleanup()        
         self.print_end_statistics()
         self.caroussel.camera.stop_preview()
-        self.caroussel.camera_close()
+        self.caroussel.camera.close()
 
 
