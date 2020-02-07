@@ -1,5 +1,5 @@
 # Caro #
-A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. Wolf Hütteroth and Dr. Tilman Triphan from the University of Leipzig/Würzburg to test the behavior of Drosophila in the presence of a turning disc. This Script regulates the light, the turning of the discs and the camera. Input = Experiment-File (s. 3.), Output = Video-files for downstream analysis of Drosophila movement-patterns
+A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. Wolf Hütteroth and Dr. Tilman Triphan from the University of Leipzig/Konstanz to test the behavior of Drosophila in the presence of a turning disc. This Script regulates the light, the turning of the discs and the camera. Input = Experiment-File (s. 3.), Output = Video-files for downstream analysis of Drosophila movement-patterns
 
 ## Dependencies: ##
 - Conda
