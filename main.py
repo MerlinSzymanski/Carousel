@@ -1,5 +1,5 @@
 from experiment import Experiment
-#from GUI import GUI
+from GUI import GUI
 from threading import Thread
 import argparse
 import os
