@@ -15,7 +15,7 @@ class Caroussel():
         self.whitelight = False
         
         #TODO: GPIO outside the class?
-        # Use board pin numbering
+        # Use board pin numberingc
         GPIO.setmode(GPIO.BCM)
         #You need to set up every channel you are using as an input or an output.
         #To configure a channel as an input
@@ -55,6 +55,7 @@ class Caroussel():
 
     def stop_motors(self):
         GPIO.output([24,25],False)
+        GPIO.output([3,4],False)
 
     def set_nightlight(self):
     #part of the cronjob started in main -> experiment.cron()
@@ -76,14 +77,17 @@ class Caroussel():
             GPIO.output([22,27],True)    #white off           
         
     def stop_turning_motor2(self):
-        GPIO.output(23, False)   #Motor2 out?  
+        GPIO.output(23, False)   #Motor2 out?
+        GPIO.output(4,False)
         
     def stop_turning_motor1(self):
-        GPIO.output(18, False)   #Motor1 out?               
+        GPIO.output(18, False)   #Motor1 out?
+        GPIO.output(3,False)
                 
                 
     def turn_motor1(self,direction1):
         self.stop_turning_motor2()
+        GPIO.output(3,True)
         if(direction1 == 'cw'):
             GPIO.output(18, False)  #Motor1 clockwise?
             self.motor1dir = True
@@ -93,6 +97,7 @@ class Caroussel():
                
     def turn_motor2(self,direction2):
         self.stop_turning_motor1()
+        GPIO.output(4,True)
         if(direction2 == 'same' and self.motor1dir):
             GPIO.output(23, False)  #Motor2 clockwise?
         elif(direction2 == 'same' and not self.motor1dir):
@@ -103,4 +108,10 @@ class Caroussel():
             GPIO.output(23, False)  #Motor2 clockwise?  
 
     def cleanup(self):
+        GPIO.output(27, False)    ## Setup redLED --> GPIO.output(27,False) = White LED on
+        GPIO.output(22, False)    ## Setup whiteLED --> GPIO.output(22,False) = Red LED on
+        GPIO.output(24, False)    ## Setup Motor1 Speed --> GPIO.output(24,True) = motor1 turns
+        GPIO.output(25, False)    ## Setup Motor2 Speed --> GPIO.output(25,True) = motor2 turns
+        GPIO.output(3, False)     ## Setup Magnet1 --> GPIO.output(3,True) = if(motor1): disc1 turns
+        GPIO.output(4, False)   
         GPIO.cleanup()      
