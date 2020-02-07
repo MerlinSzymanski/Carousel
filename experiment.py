@@ -137,7 +137,7 @@ class Experiment():
         
         #Get the Data from the Infile
         self.caroussel.camera.framerate = float(self.indata['FPS'])
-        self.caroussel.camera.start_preview()
+        self.caroussel.camera.start_preview(fullscreen=False, window = (100, 20, 640, 480))
         pause_time = int(int(self.indata["video_length"])/int(self.indata["FPS"]))   #still only FPS :/
         n = 1
         
