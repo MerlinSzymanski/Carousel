@@ -319,4 +319,3 @@ class Experiment():
         self.caroussel.camera.stop_preview()
         self.caroussel.camera.close()
 
-
