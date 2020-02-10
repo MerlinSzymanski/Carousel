@@ -48,3 +48,9 @@ You can see in the GUI what should be provided...
 ### Not Necessary ###
 Everything else is just piped into the archive, but can be specified using the files/\*.json files 
 
+##4. Additional functions ##
+Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
+If some of the functions dont work - check the pin-numbers in the "caroussel.py" module.
+To shutdown a running caroussel after a crash,use
+<pre><code>python3 main.py -c</code></pre>  
+
