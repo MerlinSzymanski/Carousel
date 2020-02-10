@@ -1,0 +1,28 @@
+name: caro
+dependencies:
+- anaconda-client=1.0.2=py34_0
+- clyent=0.4.0=py34_0
+- freetype=2.5.2=2
+- jpeg=8d=0
+- libpng=1.6.17=0
+- libtiff=4.0.2=1
+- openssl=1.0.1k=1
+- pillow=2.9.0=py34_0
+- pip=7.1.2=py34_0
+- python=3.4.3=1
+- python-dateutil=2.4.2=py34_0
+- pytz=2015.4=py34_0
+- pyyaml=3.11=py34_1
+- requests=2.7.0=py34_0
+- setuptools=18.1=py34_0
+- six=1.9.0=py34_0
+- sqlite=3.8.4.1=1
+- wheel=0.24.0=py34_0
+- xz=5.0.5=0
+- yaml=0.1.6=0
+- zlib=1.2.8=0
+- pip:
+  - picamera==1.13
+  - rpi.gpio==0.7.0
+  - tqdm==4.42.1
+
