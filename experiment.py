@@ -1,4 +1,5 @@
 from caroussel import Caroussel
+import time
 import csv
 from datetime import datetime
 import json
@@ -31,7 +32,7 @@ class Experiment():
         self.indata['status'] = "Experiment set up, but not started"
         self.terminal_size = shutil.get_terminal_size((80,20))[0]
         #the GPIO - instance
-        self.caroussel = Caroussel(self.indata)
+        self.caroussel = Caroussel()
         
         #some stats to print at the end
         self.begin = datetime.fromtimestamp(time.time())
@@ -137,7 +138,7 @@ class Experiment():
         
         #Get the Data from the Infile
         self.caroussel.camera.framerate = float(self.indata['FPS'])
-        self.caroussel.camera.start_preview()
+        self.caroussel.camera.start_preview(fullscreen=False, window = (100, 20, 640, 480))
         pause_time = int(int(self.indata["video_length"])/int(self.indata["FPS"]))   #still only FPS :/
         n = 1
         
@@ -318,5 +319,4 @@ class Experiment():
         self.print_end_statistics()
         self.caroussel.camera.stop_preview()
         self.caroussel.camera.close()
-
 
