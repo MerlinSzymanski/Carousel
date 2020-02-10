@@ -19,6 +19,7 @@ def main():
     if(args.cleanup):
         clean = Caroussel()
         clean.cleanup()
+        quit()
 
     #1. DECIDE WHICH INPUT-FORMAT TO CHOOSE
     if(args.gui):
