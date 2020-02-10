@@ -45,10 +45,10 @@ You can see in the GUI what should be provided...
 - **motor2_direction**: "same" or "different" = relative to motor 1
 - **video_length**: e.g. "9000" = Lenght in **frames**. Should be switched back to seconds to avoid confusion!
 - **FPS**: e.g. "5" = Frames per second
-### Not Necessary ###
+
 Everything else is just piped into the archive, but can be specified using the files/\*.json files 
 
-##4. Additional functions ##
+## 4. Additional functions ##
 Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
 If some of the functions dont work - check the pin-numbers in the "caroussel.py" module.
 To shutdown a running caroussel after a crash,use
