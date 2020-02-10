@@ -2,13 +2,7 @@
 A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. Wolf Hütteroth and Dr. Tilman Triphan from the University of Leipzig/Konstanz to test the behavior of Drosophila in the presence of a turning disc. This Script regulates the light, the turning of the discs and the camera. Input = Experiment-File (s. 3.), Output = Video-files for downstream analysis of Drosophila movement-patterns
 
 ## Dependencies: ##
-- Conda
-- Python 3.4
-- picamera
-- RPi.GPIO
-- tqdm
-
-TODO: Create caro.yml-file to just create a fitting environment!
+- see Point 1.3 and use the caro.yml-file to create a fitting environment! 
 
 ## 1. Getting started: ##
 (I assume, that you have a Raspberry prepared)
