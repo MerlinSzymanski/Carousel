@@ -65,6 +65,7 @@ def get_data_from_gui():
         #complicated procedure to integrate the python2 script... 
         #create temp file in temp directory to proceed with the main-script
         time.sleep(1)
+        print("Waiting for GUI. Press Ctr. + C to interrupt",end="\r")
         if("start.txt" in os.listdir("./save_files/temp/")):
             break
     os.system("rm save_files/temp/start.txt")
