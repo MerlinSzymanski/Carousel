@@ -134,10 +134,10 @@ class GUI():
         
         #2.Get default-settings
         #Load possible circ_choices
-        circ_choices = [list(x.keys())[0] for x in (json.load(open("files/circrythm.json")))]
+        circ_choices = [list(x.keys())[0] for x in (json.load(open("files/circRhythm.json")))]
         #Load food choices from last experiment
-        if(self.last_time["circRythm"] in circ_choices): 
-            default_circ = circ_choices.index(self.last_time["circRythm"])
+        if(self.last_time["circRhythm"] in circ_choices): 
+            default_circ = circ_choices.index(self.last_time["circRhythm"])
         else:
             default_circ = 0
             
@@ -210,7 +210,7 @@ class GUI():
         disc2_entry.place(relx = 0.55, rely = 0.71, relwidth = 0.30, relheight=0.05)
         disc2_entry.insert("end",str(self.last_time["disc2_pos"]))
         
-        circ_label = tk.Label(experiment_data, text = "Circadian Rythm",font='Helvetica 8 bold',anchor="e")
+        circ_label = tk.Label(experiment_data, text = "Circadian rhythm",font='Helvetica 8 bold',anchor="e")
         circ_label.place(relx = 0.05, rely = 0.78, relwidth = 0.40, relheight=0.05)
         circ_pop = ttk.Combobox(experiment_data, values = circ_choices)
         circ_pop.place(relx = 0.55, rely = 0.78, relwidth = 0.30, relheight=0.05)
@@ -249,7 +249,7 @@ class GUI():
             experiment_data["genotype"] = geno_pop.get()
             experiment_data["age"] = float(age_entry.get())
             experiment_data["camera"] = camera_entry.get()
-            experiment_data["circRythm"] = circ_pop.get()
+            experiment_data["circRhythm"] = circ_pop.get()
             experiment_data["motor_switchtime"] = switch_entry.get()
             experiment_data["motor1_direction"] = motor1_pop.get()
             experiment_data["motor2_direction"] = motor2_pop.get()
