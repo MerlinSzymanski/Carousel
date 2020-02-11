@@ -13,13 +13,19 @@ A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. W
 3. Create and activate the Environment
 <pre><code>conda env create -f caro.yml
 conda activate caro </code></pre>
+Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
+If something is not working, check the pin-numbering in the Caroussel.py-module
 
 ## 2. Running the experiment: ##
 If you are in the Carousel/ directory you can run the help-section by typing:
 <pre><code>python3 main.py -h</code></pre>
 Available flags are: 
-- i: The program starts without a GUI and reads the data from a file. Default = GUI
-- o: //TODO: save the videos somewhere else. Default = save_files/experiments/experiment_id/
+- i: The program starts without a GUI and reads the data from a file. Default file = files/template.json
+to use the same data as in the previous experiment, you can use -i save_files/temp/exp_settings.json
+- g: The program starts with a GUI 
+- t: The Functionality test
+- c: A cleanup-programm, if the Caroussel runs after the programm crashed
+
 The programm starts by typing: 
 <pre><code>python3 main.py</code></pre>
 After providing Data (see 3.), the Raspberry should:
@@ -43,7 +49,7 @@ You can see in the GUI what should be provided...
 Everything else is just piped into the archive, but can be specified using the files/\*.json files 
 
 ## 4. Additional functions ##
-Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
+
 If some of the functions dont work - check the pin-numbers in the "caroussel.py" module.
 To shutdown a running caroussel after a crash,use
 <pre><code>python3 main.py -c</code></pre>  
