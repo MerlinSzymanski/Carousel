@@ -13,6 +13,8 @@ A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. W
 3. Create and activate the Environment
 <pre><code>conda env create -f caro.yml
 conda activate caro </code></pre>
+4. <pre><code>mv caro.sh ~/bin/caro.sh</code></pre>
+5. run <pre><code>echo "alias caro='source ~/bin/caro.sh'" >> ~/.bashrc</code></pre>
 Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
 If something is not working, check the pin-numbering in the Caroussel.py-module
 
