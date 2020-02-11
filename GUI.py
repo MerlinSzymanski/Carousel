@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import tkinter as tk
-from tkinter import ttk
-#import Tkinter as tk
-#import ttk
+#import tkinter as tk
+#from tkinter import ttk
+import Tkinter as tk
+import ttk
 import json
 import os
 
@@ -260,7 +260,7 @@ class GUI():
                         
             with open(self.infile,"w") as settings:
                 json.dump(experiment_data,settings,indent = 2)
-        
+            os.system("touch save_files/temp/start.txt")
             self.root.destroy()
             
         start_button = tk.Button(start_field,text = "Start", bg="red", command = button_action)

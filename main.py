@@ -1,9 +1,9 @@
-from experiment import Experiment
-from caroussel import Caroussel
-#from GUI import GUI
+#from experiment import Experiment
+#from caroussel import Caroussel
 from threading import Thread
 import argparse
 import os
+import time
 
 def main():
     """This Main method is used to decide, if one wants to provide an input-file with all the necessary experiment-data
@@ -59,9 +59,16 @@ def get_arguments():
 
 def get_data_from_gui():
     '''If GUI is chosen, create GUI instance and proceed with the data input'''
-    interface = GUI()
-    interface.run() 
-    return interface.infile
+    os.system("python2 GUI.py")
+    while(True):
+        #complicated procedure to integrate the python2 script... 
+        #create temp file in temp directory to proceed with the main-script
+        time.sleep(1)
+        if("start.txt" in os.listdir("./save_files/temp/")):
+            break
+    os.system("rm save_files/temp/start.txt")
+    print("File deleted, proceed with Experiment")
+    return "./save_files/temp/exp_settings.json"
 
 if(__name__ == "__main__"):
     main()
