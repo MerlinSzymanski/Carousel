@@ -1,9 +1,10 @@
-from experiment import Experiment
-from caroussel import Caroussel
+#from experiment import Experiment
+#from caroussel import Caroussel
 from threading import Thread
 import argparse
-import os
+import os,shutil
 import time
+import getpass
 
 def main():
     """This Main method is used to decide, if one wants to provide an input-file with all the necessary experiment-data
@@ -19,6 +20,9 @@ def main():
     if(args.cleanup):
         clean = Caroussel()
         clean.cleanup()
+        quit()
+    if(args.setup):
+        setup()
         quit()
 
     #1. DECIDE WHICH INPUT-FORMAT TO CHOOSE
@@ -55,7 +59,8 @@ def get_arguments():
     choice.add_argument("-i", "--infile",type = str, help = 'The experiment-file to run the experiment without GUI. See the template for more information' )
     choice.add_argument("-t", "--test",help="Use this tag to run a functionality test of all the GPIO-Pins", action="store_true")
     choice.add_argument("-c", "--cleanup", help="Use this tag if the programm crashed and the Caroussel still runs. It will shutdown the GPIO-pins safely",action="store_true")
-    
+    choice.add_argument("-s", "--setup", help="Use this tag after cloning the repository to setup the program. You can type 'caro' in terminal afterwards to start the gui",action="store_true")    
+
     return parser.parse_args()
 
 def get_data_from_gui():
@@ -70,6 +75,32 @@ def get_data_from_gui():
             break
     os.system("rm save_files/temp/start.txt")
     return "./save_files/temp/exp_settings.json"
+
+def setup():
+    """Start this method once(!) after cloning the repository to initiate an alias and start the program with one single "caro" in terminal"""
+    #Put the caro.sh - file into the bin-directory of the current user
+    bindir = "/home/{}/bin/".format(getpass.getuser())
+    if(os.path.isdir(bindir)):
+        pass
+    else:
+        os.mkdir(bindir)
+    if("caro.sh" not in os.listdir(bindir)):
+        if("caro.sh" in os.listdir(".")):
+
+            #Alter the caro.sh-file to point to the current directory
+            with open("caro2.sh","w") as outfile:
+                for line in [x.strip() for x in open("caro.sh")]:
+                    if(line == "cd path/to/caro"):
+                        line = "cd {}".format(os.getcwd())
+                    outfile.write(line + "\n")
+
+            shutil.copy2("caro2.sh","{}/caro.sh".format(bindir))
+            os.system("rm caro.sh")
+            os.system("rm caro2.sh")
+        #Set the alias in the .bashrc
+        os.system("echo 'alias caro=\"source ~/bin/caro.sh\"' >> ~/.bashrc")
+    else:
+        print("Setup already finished. Aborting")
 
 if(__name__ == "__main__"):
     main()
