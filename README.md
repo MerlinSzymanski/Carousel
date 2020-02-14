@@ -13,30 +13,25 @@ A Program to run 'THE CAROUSSEL' - A Raspberry/GPIO-based machine built by Dr. W
 3. Create and activate the Environment
 <pre><code>conda env create -f caro.yml
 conda activate caro </code></pre>
-4. <pre><code>mv caro.sh ~/bin/caro.sh</code></pre>
-5. run <pre><code>echo "alias caro='source ~/bin/caro.sh'" >> ~/.bashrc</code></pre>
-Run <pre><code>python3 main.py -t</code></pre> to run a functionality-test.
+4. Set up a Shortcut in the Terminal by running 
+<pre><code>python3 main.py -s</code></pre>
+5. Run a functionality-Test
+<pre><code>python3 main.py -t</code></pre> 
 If something is not working, check the pin-numbering in the Caroussel.py-module
 
 ## 2. Running the experiment: ##
-If you are in the Carousel/ directory you can run the help-section by typing:
-<pre><code>python3 main.py -h</code></pre>
+You can now access the program by opening the terminal and typing
+<pre><code>caro</code></pre>
+which start the Userunterface.
+
+If you want to go directly over the python-file, **change to the Carousel/ directory** and type:
+<pre><code>python3 main.py</code></pre>
 Available flags are: 
 - i: The program starts without a GUI and reads the data from a file. Default file = files/template.json
 to use the same data as in the previous experiment, you can use -i save_files/temp/exp_settings.json
 - g: The program starts with a GUI 
 - t: The Functionality test
 - c: A cleanup-programm, if the Caroussel runs after the programm crashed
-
-The programm starts by typing: 
-<pre><code>python3 main.py</code></pre>
-After providing Data (see 3.), the Raspberry should:
-1. Activate Light and Motor of the Caroussel    
-When the Time is either %H:30:00 or %H:00:00:
-2. Start turning the discs, Start filming
-3. Run for eternity     
-When the program is interrupted:
-4. End the currently running video (or force-quit) and shut down the Caroussel
 
 ## 3. Data to provide: ##
 You can see in the GUI what should be provided...
