@@ -60,6 +60,7 @@ def get_arguments():
     choice.add_argument("-t", "--test",help="Use this tag to run a functionality test of all the GPIO-Pins", action="store_true")
     choice.add_argument("-c", "--cleanup", help="Use this tag if the programm crashed and the Caroussel still runs. It will shutdown the GPIO-pins safely",action="store_true")
     choice.add_argument("-s", "--setup", help="Use this tag after cloning the repository to setup the program. You can type 'caro' in terminal afterwards to start the gui",action="store_true")    
+    choice.add_argument("-v", "--version", action="version" , version="v1.0"
 
     return parser.parse_args()
 
